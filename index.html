@@ -205,34 +205,48 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyRSSuL6wW7-QVCNq503LW2SOnPkJNL1XAZRrvI9yEv9JynVMc-LsFfiBXArtRLemGz/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuepJMCY8x-C3xNuqXf5JfAniOrDMg3ZE64reDxLs9i6MV65ZoTdtzwjMkUvDMNVMe/exec";
 
         /**
-         * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수
+         * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
          */
         async function callGas(action, data = {}) {
-            if (GAS_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbyRSSuL6wW7-QVCNq503LW2SOnPkJNL1XAZRrvI9yEv9JynVMc-LsFfiBXArtRLemGz/exec") {
-                console.warn("GAS_WEB_APP_URL이 설정되지 않았습니다. 가상 데이터를 사용합니다.");
+            if (GAS_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbyuepJMCY8x-C3xNuqXf5JfAniOrDMg3ZE64reDxLs9i6MV65ZoTdtzwjMkUvDMNVMe/exec") {
+                console.warn("GAS_WEB_APP_URL이 설정되지 않았습니다.");
                 return null;
             }
 
-            try {
-                // 데이터 수신을 위해 GET 요청 사용
+            return new Promise((resolve, reject) => {
+                const callbackName = 'gas_callback_' + Math.round(Math.random() * 1000000);
+                
+                // 타임아웃 설정 (10초)
+                const timeout = setTimeout(() => {
+                    delete window[callbackName];
+                    console.error("GAS 호출 시간 초과");
+                    resolve(null);
+                }, 10000);
+
+                window[callbackName] = (response) => {
+                    clearTimeout(timeout);
+                    delete window[callbackName];
+                    resolve(response);
+                };
+
+                const script = document.createElement('script');
                 const url = new URL(GAS_WEB_APP_URL);
                 url.searchParams.append('action', action);
+                url.searchParams.append('callback', callbackName);
                 Object.keys(data).forEach(key => url.searchParams.append(key, data[key]));
-
-                const response = await fetch(url.toString(), {
-                    method: 'GET',
-                    cache: 'no-cache'
-                });
                 
-                if (!response.ok) throw new Error('네트워크 응답이 올바르지 않습니다.');
-                return await response.json();
-            } catch (err) {
-                console.error("GAS 호출 실패:", err);
-                return null; // 실패 시 null 반환
-            }
+                script.src = url.toString();
+                script.onerror = () => {
+                    clearTimeout(timeout);
+                    resolve(null);
+                };
+                document.body.appendChild(script);
+                // 스크립트 태그는 호출 후 삭제
+                setTimeout(() => document.body.removeChild(script), 1000);
+            });
         }
 
         // 데이터 전송용 (결과 저장 등)
