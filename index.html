@@ -204,6 +204,54 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
+        // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw2msH-iDJ6QWoJUr8DlKWDxafikm5kQZqYMAKA9F65X3yB9f70WMB2rBU45BFLeqgY/exec";
+
+        /**
+         * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수
+         */
+        async function callGas(action, data = {}) {
+            // 로컬 테스트 시에는 구글 앱스크립트가 없으므로 무시하거나 가상 데이터 반환
+            if (GAS_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbw2msH-iDJ6QWoJUr8DlKWDxafikm5kQZqYMAKA9F65X3yB9f70WMB2rBU45BFLeqgY/exec") {
+                console.warn("GAS_WEB_APP_URL이 설정되지 않았습니다.");
+                return null;
+            }
+
+            try {
+                const response = await fetch(GAS_WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // GAS 웹앱은 리다이렉션 때문에 no-cors가 필요할 수 있음
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, ...data })
+                });
+                
+                // no-cors 모드에서는 응답 본문을 읽을 수 없으므로, 
+                // 데이터를 가져와야 하는 경우(명단 등)에는 doGet + JSONP 등을 고려해야 하나
+                // 여기서는 최대한 단순하게 처리합니다.
+                // 명단 불러오기처럼 데이터를 받아야 하는 경우를 위해 'cors' 모드를 시도해보겠습니다.
+                
+                // 다시 시도 (데이터 수신용)
+                const responseWithData = await fetch(`${GAS_WEB_APP_URL}?action=${action}`, {
+                    method: 'GET'
+                });
+                return await responseWithData.json();
+            } catch (err) {
+                console.error("GAS 호출 실패:", err);
+                return null;
+            }
+        }
+
+        // 데이터 전송용 (결과 저장 등)
+        async function sendGasData(action, data = {}) {
+            if (GAS_WEB_APP_URL === "YOUR_GAS_WEB_APP_URL_HERE") return;
+            fetch(GAS_WEB_APP_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ action, ...data })
+            });
+        }
+
         /* ===== 데이터 ===== */
         const NUM_WORDS = {
             10: { s: "십", k: "열" }, 20: { s: "이십", k: "스물" }, 30: { s: "삼십", k: "서른" },
@@ -243,6 +291,32 @@
                 const sino = (tens === 1 ? '십' : S_ORDER[tens - 1]) + S_UNITS[units];
                 return [native, sino];
             }
+        }
+
+        /* 한자어 읽기만 반환 (4단계 정답용) */
+        function getSinoReading(n) {
+            const tens = Math.floor(n / 10);
+            const units = n % 10;
+            if (units === 0) return S_ORDER[tens - 1];
+            return (tens === 1 ? '십' : S_ORDER[tens - 1]) + S_UNITS[units];
+        }
+
+        /* 수모형 개수 기반 힌트 텍스트 생성 (4단계용) */
+        function getBlockHint(n) {
+            const tens = Math.floor(n / 10);
+            const units = n % 10;
+            const sino = getSinoReading(n);
+            if (units === 0) {
+                return [
+                    { label: '보라색 십 모형', count: tens, value: S_ORDER[tens - 1] },
+                    { sino }
+                ];
+            }
+            return [
+                { label: '보라색 십 모형', count: tens, value: tens === 1 ? '십' : S_ORDER[tens - 1] },
+                { label: '주황색 낱개', count: units, value: S_UNITS[units] },
+                { sino }
+            ];
         }
 
         /* ===== 수 모형 (십모형, 일모형) ===== */
@@ -338,14 +412,14 @@
                 ans: [NUM_WORDS[Math.floor(n / 10) * 10].k, K_UNITS[n % 10]],
                 hint: `십모형이 ${Math.floor(n / 10)}개, 낱개가 ${n % 10}개 있어요.\n어떻게 읽을까요?`
             }));
-            // 4단계: 이전 단계에서 다룬 수들을 직접 소리 내어 읽기
+            // 4단계: 한자어로만 읽기 (정답은 한자어만 인정)
             const stage4Numbers = [25, 50, 19, 32, 41];
             const p4 = stage4Numbers.map(n => {
-                const readings = getValidReadings(n);
+                const sino = getSinoReading(n);
                 return {
                     id: `p4-${n}`, phase: 4, type: 'voice', q: n,
-                    validReadings: readings,
-                    hint: `${n}은\n'${readings[0]}' 또는 '${readings[1]}'라고 읽어요.`
+                    validReadings: [sino],   // 한자어만 정답
+                    blockHint: getBlockHint(n)
                 };
             });
             return {
@@ -379,19 +453,20 @@
             const [transcript, setTranscript] = useState('');
             const [interimTranscript, setInterimTranscript] = useState('');
             const [voiceResult, setVoiceResult] = useState(null); // null | 'correct' | 'wrong'
+            const [showHint, setShowHint] = useState(false);
             const recogRef = useRef(null);
 
             // 학생 명단 불러오기
             useEffect(() => {
                 if (step === 'login' && students.length === 0) {
                     setIsLoading(true);
-                    if (typeof google !== 'undefined') {
-                        google.script.run
-                            .withSuccessHandler((data) => {
+                    if (GAS_WEB_APP_URL !== "YOUR_GAS_WEB_APP_URL_HERE") {
+                        callGas('getStudentList').then(data => {
+                            if (data) {
                                 setStudents(data);
                                 setIsLoading(false);
-                            })
-                            .getStudentList();
+                            }
+                        });
                     } else {
                         // 로컬 테스트용 가상 데이터
                         setTimeout(() => {
@@ -427,6 +502,7 @@
                 setInterimTranscript('');
                 setVoiceResult(null);
                 setIsRecording(false);
+                setShowHint(false);
                 if (recogRef.current) {
                     try { recogRef.current.abort(); } catch (e) { }
                     recogRef.current = null;
@@ -504,9 +580,7 @@
                         if (!completed.includes(phase)) setCompleted(pr => [...pr, phase]);
 
                         // 활동 기록 저장
-                        if (typeof google !== 'undefined' && currentUser) {
-                            google.script.run.saveActivity(phase, currentUser.num, currentUser.name);
-                        }
+                        sendGasData('saveActivity', { stageNum: phase, studentNum: currentUser.num, studentName: currentUser.name });
                     }
                 }
             };
@@ -518,6 +592,11 @@
                     alert('이 브라우저에서는 음성 인식을 지원하지 않아요.\n크롬 브라우저를 사용해 주세요!');
                     return;
                 }
+                // 기존 인식기를 반드시 정리 후 새로 시작 (두 번째 녹음 버그 수정)
+                if (recogRef.current) {
+                    try { recogRef.current.onresult = null; recogRef.current.onend = null; recogRef.current.onerror = null; recogRef.current.abort(); } catch (e) { }
+                    recogRef.current = null;
+                }
                 const recog = new SpeechRecognition();
                 recog.lang = 'ko-KR';
                 recog.interimResults = true;  // 실시간 중간 결과 활성화
@@ -526,6 +605,7 @@
                 setTranscript('');
                 setInterimTranscript('');
                 setVoiceResult(null);
+                setShowHint(false);
 
                 recog.onresult = (event) => {
                     let interimText = '';
@@ -568,9 +648,13 @@
                         } else {
                             speak('다시 한번 읽어볼까?', muted);
                         }
-                        if (typeof google !== 'undefined' && currentUser) {
-                            google.script.run.saveVoiceRecord(currentUser.num, currentUser.name, p.q, bestText, matched ? '정답' : '오답');
-                        }
+                        sendGasData('saveVoiceRecord', { 
+                            studentNum: currentUser.num, 
+                            studentName: currentUser.name, 
+                            number: p.q, 
+                            transcribed: bestText, 
+                            isCorrect: matched ? '정답' : '오답' 
+                        });
                     }
                 };
                 recog.onerror = (e) => {
@@ -599,8 +683,8 @@
                     else {
                         setStamp(true);
                         if (!completed.includes(phase)) setCompleted(pr => [...pr, phase]);
-                        if (typeof google !== 'undefined' && currentUser) {
-                            google.script.run.saveActivity(phase, currentUser.num, currentUser.name);
+                        if (currentUser) {
+                            sendGasData('saveActivity', { stageNum: phase, studentNum: currentUser.num, studentName: currentUser.name });
                         }
                     }
                 }
@@ -615,6 +699,7 @@
                 setStamp(false);
                 setTranscript('');
                 setVoiceResult(null);
+                setShowHint(false);
                 setDrops(firstP.ans ? new Array(firstP.ans.length).fill(null) : []);
                 setStep('play');
             };
@@ -806,19 +891,73 @@
 
                     {/* 메인 콘텐츠 */}
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 40px', gap: 20, overflowY: 'auto' }}>
-                        {/* 수 모형 + 숫자 카드 */}
-                        <div style={{ background: '#f0fdf4', border: '6px solid #4ade80', borderRadius: 48, padding: '20px 40px', width: '100%', maxWidth: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40, boxShadow: '0 10px 30px rgba(0,0,0,0.05)', flexWrap: 'wrap' }}>
+                        {/* 수 모형 + 숫자 카드 + 힌트 버튼 */}
+                        <div style={{ background: '#f0fdf4', border: '6px solid #4ade80', borderRadius: 48, padding: '20px 40px', width: '100%', maxWidth: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40, boxShadow: '0 10px 30px rgba(0,0,0,0.05)', flexWrap: 'wrap', position: 'relative' }}>
                             <BlocksDisplay value={p.q} />
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                                 <div style={{ fontSize: 16, fontWeight: 700, color: '#64748b' }}>숫자</div>
                                 <div style={{ fontSize: 120, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>{p.q}</div>
                             </div>
+                            {/* 힌트 버튼 */}
+                            {!voiceResult && (
+                                <button
+                                    onClick={() => setShowHint(h => !h)}
+                                    style={{
+                                        position: 'absolute', top: 14, right: 18,
+                                        width: 58, height: 58, borderRadius: '50%',
+                                        background: showHint ? '#fbbf24' : 'white',
+                                        border: '3px solid #fbbf24',
+                                        fontSize: 28, cursor: 'pointer',
+                                        boxShadow: '0 4px 14px rgba(251,191,36,0.35)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    title="힌트 보기"
+                                >💡</button>
+                            )}
                         </div>
+
+                        {/* 힌트 패널 */}
+                        {showHint && !voiceResult && p.blockHint && (
+                            <div className="pop-in" style={{
+                                width: '100%', maxWidth: 900,
+                                background: '#fffbeb', border: '4px solid #fbbf24',
+                                borderRadius: 32, padding: '18px 28px',
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12
+                            }}>
+                                <div style={{ fontSize: 18, fontWeight: 900, color: '#92400e' }}>수 모형 개수를 세어 읽어봐요! 💡</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+                                    {p.blockHint.filter(h => h.label).map((h, i) => (
+                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                            {i > 0 && <span style={{ fontSize: 26, fontWeight: 900, color: '#94a3b8' }}>+</span>}
+                                            <div style={{
+                                                background: 'white',
+                                                border: `3px solid ${h.label.includes('십') ? '#a855f7' : '#fb923c'}`,
+                                                borderRadius: 18, padding: '10px 18px', textAlign: 'center',
+                                                boxShadow: '0 3px 8px rgba(0,0,0,0.06)'
+                                            }}>
+                                                <div style={{ fontSize: 12, color: '#64748b', fontWeight: 700, marginBottom: 2 }}>{h.label}</div>
+                                                <div style={{ fontSize: 30, fontWeight: 900, color: h.label.includes('십') ? '#a855f7' : '#ea580c' }}>{h.count}개</div>
+                                                <div style={{ fontSize: 18, fontWeight: 900, color: '#334155', marginTop: 2 }}>= "{h.value}"</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <span style={{ fontSize: 28, fontWeight: 900, color: '#94a3b8' }}>=</span>
+                                    <div style={{
+                                        background: '#fef9c3', border: '4px solid #fbbf24',
+                                        borderRadius: 20, padding: '12px 24px', textAlign: 'center'
+                                    }}>
+                                        <div style={{ fontSize: 13, color: '#92400e', fontWeight: 700, marginBottom: 2 }}>이렇게 읽어요!</div>
+                                        <div style={{ fontSize: 42, fontWeight: 900, color: '#b45309' }}>&#34;{p.blockHint.find(h => h.sino)?.sino}&#34;</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* 안내 문구 */}
                         {!voiceResult && (
-                            <p style={{ fontSize: 30, fontWeight: 900, color: '#15803d', textAlign: 'center', margin: 0 }}>
-                                이 수를 소리 내어 읽어보세요! 🗣️
+                            <p style={{ fontSize: 28, fontWeight: 900, color: '#15803d', textAlign: 'center', margin: 0 }}>
+                                한자어로 소리 내어 읽어보세요! 🗣️ <span style={{ fontSize: 20, color: '#64748b' }}>(예: 십구, 이십오)</span>
                             </p>
                         )}
 
@@ -912,7 +1051,7 @@
                                             '🌟 너무 잘 읽었어요!'
                                         ) : (
                                             <span>다시 읽어볼까요?<br /><span style={{ fontSize: 20, color: '#475569' }}>
-                                                {p.q}는 '{p.validReadings[0]}' 또는 '{p.validReadings[1]}'라고 읽어요
+                                                {p.q}는 한자어로 <b style={{ color: '#dc2626' }}>'{p.validReadings[0]}'</b>라고 읽어요
                                             </span></span>
                                         )}
                                     </div>
