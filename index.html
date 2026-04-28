@@ -205,13 +205,14 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyuepJMCY8x-C3xNuqXf5JfAniOrDMg3ZE64reDxLs9i6MV65ZoTdtzwjMkUvDMNVMe/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyyqY4hyuvgibuvgG2EkEAq_6Uxm_jBHevpxBiW2n_MyHgSfceFTQDBrPWYABY_1vnz/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
          */
         async function callGas(action, data = {}) {
-            if (GAS_WEB_APP_URL === "https://script.google.com/macros/s/AKfycbyuepJMCY8x-C3xNuqXf5JfAniOrDMg3ZE64reDxLs9i6MV65ZoTdtzwjMkUvDMNVMe/exec") {
+            // URL이 설정되지 않았거나 유효한 GAS URL이 아니면 무시
+            if (!GAS_WEB_APP_URL || !GAS_WEB_APP_URL.startsWith('https://script.google.com')) {
                 console.warn("GAS_WEB_APP_URL이 설정되지 않았습니다.");
                 return null;
             }
@@ -251,7 +252,7 @@
 
         // 데이터 전송용 (결과 저장 등)
         async function sendGasData(action, data = {}) {
-            if (GAS_WEB_APP_URL === "YOUR_GAS_WEB_APP_URL_HERE") return;
+            if (!GAS_WEB_APP_URL || !GAS_WEB_APP_URL.startsWith('https://script.google.com')) return;
             fetch(GAS_WEB_APP_URL, {
                 method: 'POST',
                 mode: 'no-cors',
@@ -680,7 +681,10 @@
                 };
                 recog.onend = () => { setIsRecording(false); setInterimTranscript(''); };
                 recogRef.current = recog;
-                recog.start();
+                // 이전 인식기가 완전히 종료된 후 시작 (두 번째 문제부터 인식 맙힙 해결)
+                setTimeout(() => {
+                    try { recog.start(); } catch(e) { console.warn('recog.start() 실패:', e); }
+                }, 150);
             };
 
             // 음성 다음 문제
