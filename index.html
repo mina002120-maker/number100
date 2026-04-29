@@ -205,7 +205,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyEX7xQKeN92s3DfmxlCVE04lRl-uKgdH7e5xwnisajyqMlriYehaWzPGkGKg8TIooh/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxFkeBYcOzOzdbHRK-rc8br8jMLJuf6w-DhThZfO3zN5eW-4aB-L8Oj__kd08D5lGO8/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -403,12 +403,27 @@
 
         /* ===== 문제 생성 ===== */
         function buildProblems(stage4Count = 5) {
-            const p1 = [10, 30, 50, 20, 80].map(n => ({
+            // 셔플 함수
+            const shuffle = (arr) => {
+                const result = [...arr];
+                for (let i = result.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [result[i], result[j]] = [result[j], result[i]];
+                }
+                return result;
+            };
+            
+            // 1단계: 10씩 묶기 (10의 배수 중 랜덤 3개)
+            const tens = shuffle([10, 20, 30, 40, 50, 60, 70, 80, 90]).slice(0, 3);
+            const p1 = tens.map(n => ({
                 id: `p1-${n}`, phase: 1, type: 'bundle', q: n,
                 ans: [NUM_WORDS[n].s, NUM_WORDS[n].k],
                 hint: `십모형이 ${n / 10}개예요.\n10이 ${n / 10}개인 수를 어떻게 읽을까요?`
             }));
-            const p2 = [25, 41, 19, 63, 87].map(n => {
+            
+            // 2단계: 수 쓰기 (11~99 중 랜덤 3개, 일의 자리가 0이 아닌 수)
+            const twoDigits = shuffle(Array.from({length: 89}, (_, i) => i + 11).filter(n => n % 10 !== 0)).slice(0, 3);
+            const p2 = twoDigits.map(n => {
                 const ten = Math.floor(n / 10) * 10, unit = n % 10;
                 return {
                     id: `p2-${n}`, phase: 2, type: 'digit',
@@ -417,7 +432,10 @@
                     hint: `'${NUM_WORDS[ten].k}'은 십모형 ${Math.floor(n / 10)}개,\n'${K_UNITS[unit]}'은 낱개 ${unit}개를 의미해요.`
                 };
             });
-            const p3 = [32, 54, 21, 76, 99].map(n => ({
+            
+            // 3단계: 수 읽기 (11~99 중 랜덤 3개, 2단계와 겹치지 않도록)
+            const readPool = shuffle(Array.from({length: 89}, (_, i) => i + 11).filter(n => n % 10 !== 0 && !twoDigits.includes(n))).slice(0, 3);
+            const p3 = readPool.map(n => ({
                 id: `p3-${n}`, phase: 3, type: 'read', q: n,
                 ans: [NUM_WORDS[Math.floor(n / 10) * 10].k, K_UNITS[n % 10]],
                 hint: `십모형이 ${Math.floor(n / 10)}개, 낱개가 ${n % 10}개 있어요.\n어떻게 읽을까요?`
@@ -426,7 +444,7 @@
             // 4단계: 우리말로 읽기 (랜덤 생성)
             const pool = [];
             for (let i = 11; i < 100; i++) pool.push(i);
-            const stage4Numbers = pool.sort(() => Math.random() - 0.5).slice(0, stage4Count);
+            const stage4Numbers = shuffle(pool).slice(0, stage4Count);
             
             const p4 = stage4Numbers.map(n => {
                 const native = getNativeReading(n);
@@ -438,9 +456,9 @@
                 };
             });
             return {
-                1: p1.slice(0, 3),
-                2: p2.slice(0, 3),
-                3: p3.slice(0, 3),
+                1: p1,
+                2: p2,
+                3: p3,
                 4: p4
             };
         }
@@ -723,7 +741,9 @@
                 if (id === 4) {
                     setShowConfig4(true);
                 } else {
-                    const firstP = allProbs[id][0];
+                    const newProbs = buildProblems();
+                    setAllProbs(prev => ({ ...prev, [id]: newProbs[id] }));
+                    const firstP = newProbs[id][0];
                     setPhase(id);
                     setProbIdx(0);
                     setWrong([]);
@@ -995,43 +1015,43 @@
                             <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)' }}>
                                 <div className="pop-in" style={{
                                     background: '#fffbeb', border: '6px solid #fbbf24',
-                                    borderRadius: 40, padding: '32px 40px',
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
-                                    maxWidth: 700, width: '90%', boxShadow: '0 30px 80px rgba(0,0,0,0.25)'
+                                    borderRadius: 40, padding: '50px 60px',
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32,
+                                    maxWidth: 1100, width: '95%', boxShadow: '0 30px 80px rgba(0,0,0,0.25)'
                                 }}>
-                                    <div style={{ fontSize: 22, fontWeight: 900, color: '#92400e' }}>💡 수 모형을 세어보고, 한자어로 읽어보세요!</div>
+                                    <div style={{ fontSize: 40, fontWeight: 900, color: '#92400e' }}>💡 수 모형을 세어보고, 한자어로 읽어보세요!</div>
                                     
                                     {/* 수모형 + 한자어 단서 */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', justifyContent: 'center' }}>
                                         {p.blockHint.filter(h => h.label).map((h, i) => (
-                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                {i > 0 && <span style={{ fontSize: 28, fontWeight: 900, color: '#94a3b8' }}>+</span>}
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                                {i > 0 && <span style={{ fontSize: 48, fontWeight: 900, color: '#94a3b8' }}>+</span>}
                                                 <div style={{
                                                     background: 'white',
-                                                    border: `3px solid ${h.label.includes('십') ? '#a855f7' : '#fb923c'}`,
-                                                    borderRadius: 20, padding: '14px 22px', textAlign: 'center',
-                                                    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+                                                    border: `4px solid ${h.label.includes('십') ? '#a855f7' : '#fb923c'}`,
+                                                    borderRadius: 28, padding: '24px 40px', textAlign: 'center',
+                                                    boxShadow: '0 6px 16px rgba(0,0,0,0.08)'
                                                 }}>
-                                                    <div style={{ fontSize: 14, color: '#64748b', fontWeight: 700, marginBottom: 4 }}>{h.label}</div>
-                                                    <div style={{ fontSize: 36, fontWeight: 900, color: h.label.includes('십') ? '#a855f7' : '#ea580c' }}>{h.count}개</div>
-                                                    <div style={{ fontSize: 20, fontWeight: 900, color: '#334155', marginTop: 4 }}>한자어: "{h.sinoValue}"</div>
+                                                    <div style={{ fontSize: 24, color: '#64748b', fontWeight: 700, marginBottom: 8 }}>{h.label}</div>
+                                                    <div style={{ fontSize: 64, fontWeight: 900, color: h.label.includes('십') ? '#a855f7' : '#ea580c' }}>{h.count}개</div>
+                                                    <div style={{ fontSize: 34, fontWeight: 900, color: '#334155', marginTop: 8 }}>한자어: "{h.sinoValue}"</div>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
 
-                                    {/* 한자어 신호 + 우리말 자스틸히 생각해보기 안내 */}
+                                    {/* 한자어 단서 + 우리말 생각해보기 안내 */}
                                     <div style={{
-                                        background: '#fef3c7', border: '3px dashed #f59e0b',
-                                        borderRadius: 24, padding: '18px 28px', textAlign: 'center', width: '100%'
+                                        background: '#fef3c7', border: '4px dashed #f59e0b',
+                                        borderRadius: 32, padding: '32px 48px', textAlign: 'center', width: '100%'
                                     }}>
-                                        <div style={{ fontSize: 16, color: '#92400e', fontWeight: 700, marginBottom: 8 }}>한자어로는 <b style={{ fontSize: 28, color: '#b45309' }}>'{p.blockHint.find(h => h.sinoFull)?.sinoFull}'</b></div>
-                                        <div style={{ fontSize: 20, color: '#78350f', fontWeight: 700 }}>🤔 우리말로는 답이 나와 있지 않아요!<br />수 모형 개수를 세어서 스스로 읽어보세요!</div>
+                                        <div style={{ fontSize: 30, color: '#92400e', fontWeight: 700, marginBottom: 12 }}>한자어로는 <b style={{ fontSize: 52, color: '#b45309' }}>'{p.blockHint.find(h => h.sinoFull)?.sinoFull}'</b></div>
+                                        <div style={{ fontSize: 34, color: '#78350f', fontWeight: 700, lineHeight: 1.5 }}>🤔 우리말로는 답이 나와 있지 않아요!<br />수 모형 개수를 세어서 스스로 읽어보세요!</div>
                                     </div>
 
                                     <button onClick={() => setShowHint(false)} className="main-btn" style={{
-                                        padding: '16px 60px', background: '#fbbf24', color: 'white',
-                                        borderRadius: 999, fontSize: 24, fontWeight: 900,
+                                        padding: '20px 80px', background: '#fbbf24', color: 'white',
+                                        borderRadius: 999, fontSize: 32, fontWeight: 900,
                                         border: 'none', cursor: 'pointer',
                                         boxShadow: '0 8px 20px rgba(251,191,36,0.35)'
                                     }}>알겠어요! 👍</button>
