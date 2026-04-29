@@ -205,7 +205,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw6PNZKpsD4kccGH3_3LWGF1BPabCCuGOCDbk-KeuwwVru5hvysowYmfX6D8jN-/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbytO1H7BIR6fcMfxE8zjg6rlF6vS-PTQRijFlel4XIx74-7eiYexmKBaNVKbtUkfrX_/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -400,7 +400,7 @@
         }
 
         /* ===== 문제 생성 ===== */
-        function buildProblems() {
+        function buildProblems(stage4Count = 5) {
             const p1 = [10, 30, 50, 20, 80].map(n => ({
                 id: `p1-${n}`, phase: 1, type: 'bundle', q: n,
                 ans: [NUM_WORDS[n].s, NUM_WORDS[n].k],
@@ -420,12 +420,14 @@
                 ans: [NUM_WORDS[Math.floor(n / 10) * 10].k, K_UNITS[n % 10]],
                 hint: `십모형이 ${Math.floor(n / 10)}개, 낱개가 ${n % 10}개 있어요.\n어떻게 읽을까요?`
             }));
-            // 4단계: 우리말로 읽기 (정답은 우리말만 인정, 음성인식 대안도 추가)
-            const stage4Numbers = [25, 50, 19, 32, 41];
+            
+            // 4단계: 우리말로 읽기 (랜덤 생성)
+            const pool = [];
+            for (let i = 11; i < 100; i++) pool.push(i);
+            const stage4Numbers = pool.sort(() => Math.random() - 0.5).slice(0, stage4Count);
+            
             const p4 = stage4Numbers.map(n => {
                 const native = getNativeReading(n);
-                // 음성인식이 잘못 인식할 수 있는 대안들도 포함
-                const allReadings = getValidReadings(n); // [우리말, 한자어]
                 return {
                     id: `p4-${n}`, phase: 4, type: 'voice', q: n,
                     correctReading: native,  // 정답 표시용 (우리말)
@@ -440,8 +442,6 @@
                 4: p4
             };
         }
-
-        const ALL_PROBLEMS = buildProblems();
 
         /* ===== 메인 앱 ===== */
         function App() {
@@ -465,6 +465,8 @@
             const [interimTranscript, setInterimTranscript] = useState('');
             const [voiceResult, setVoiceResult] = useState(null); // null | 'correct' | 'wrong'
             const [showHint, setShowHint] = useState(false);
+            const [allProbs, setAllProbs] = useState(() => buildProblems());
+            const [showConfig4, setShowConfig4] = useState(false);
             const recogRef = useRef(null);
 
             // 학생 명단 불러오기
@@ -499,7 +501,7 @@
                 }
             }, [step]);
 
-            const problems = reviewMode ? wrong : (ALL_PROBLEMS[phase] || ALL_PROBLEMS[1]);
+            const problems = reviewMode ? wrong : (allProbs[phase] || allProbs[1]);
             const p = problems[probIdx] || problems[0];
 
             const cards = useMemo(() => {
@@ -647,19 +649,16 @@
                         let matched = false;
                         let bestText = alternatives[0];
                         
-                        // 더 관대한 매칭: 음성인식 결과의 각 대안을 정답과 비교
+                        // 엄격한 매칭: 정확히 일치하거나 한글만 추출 후 정확히 일치
                         for (const alt of alternatives) {
                             for (const valid of validReadings) {
-                                // 정확히 일치
+                                // 1) 정확히 일치
                                 if (alt === valid) { matched = true; bestText = alt; break; }
-                                // 포함 관계 (짧은 단어가 긴 단어에 포함)
-                                if (alt.includes(valid) || valid.includes(alt)) { matched = true; bestText = alt; break; }
-                                // 공백/특수문자 제거 후 비교
+                                // 2) 한글만 추출 후 정확히 일치
                                 const cleanAlt = alt.replace(/[^가-힣]/g, '');
                                 const cleanValid = valid.replace(/[^가-힣]/g, '');
-                                if (cleanAlt === cleanValid || cleanAlt.includes(cleanValid) || cleanValid.includes(cleanAlt)) {
-                                    matched = true; bestText = cleanAlt || alt; break;
-                                }
+                                if (cleanAlt.length >= 2 && cleanAlt === cleanValid) {
+                                    matched = true; bestText = cleanAlt; break; }
                             }
                             if (matched) break;
                         }
@@ -719,16 +718,28 @@
             };
 
             const goStage = (id) => {
-                const firstP = ALL_PROBLEMS[id][0];
-                setPhase(id);
+                if (id === 4) {
+                    setShowConfig4(true);
+                } else {
+                    const firstP = allProbs[id][0];
+                    setPhase(id);
+                    setProbIdx(0);
+                    setWrong([]);
+                    setFeedback(null);
+                    setStamp(false);
+                    setTranscript('');
+                    setVoiceResult(null);
+                    setShowHint(false);
+                    setDrops(firstP.ans ? new Array(firstP.ans.length).fill(null) : []);
+                    setStep('play');
+                }
+            };
+
+            const startStage4 = (count) => {
+                const newProbs = buildProblems(count);
+                setAllProbs(newProbs);
+                setPhase(4);
                 setProbIdx(0);
-                setWrong([]);
-                setFeedback(null);
-                setStamp(false);
-                setTranscript('');
-                setVoiceResult(null);
-                setShowHint(false);
-                setDrops(firstP.ans ? new Array(firstP.ans.length).fill(null) : []);
                 setStep('play');
             };
 
@@ -894,6 +905,33 @@
                             );
                         })}
                     </div>
+
+                    {/* 4단계 문항 수 선택 모달 */}
+                    {showConfig4 && (
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)' }}>
+                            <div className="pop-in" style={{ background: 'white', padding: '40px', borderRadius: 48, boxShadow: '0 20px 60px rgba(0,0,0,0.15)', border: '8px solid #bbf7d0', textAlign: 'center', maxWidth: 600, width: '90%' }}>
+                                <div style={{ fontSize: 64, marginBottom: 16 }}>🗣️</div>
+                                <h3 style={{ fontSize: 42, fontWeight: 900, color: '#166534', marginBottom: 8 }}>4단계: 소리로 읽기</h3>
+                                <p style={{ fontSize: 24, color: '#475569', marginBottom: 32, fontWeight: 700 }}>몇 문제를 풀어볼까요?</p>
+                                
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                    {[3, 5, 10].map(num => (
+                                        <button key={num} onClick={() => startStage4(num)} className="main-btn" style={{
+                                            padding: '20px', background: 'white', border: '4px solid #4ade80',
+                                            borderRadius: 24, fontSize: 32, fontWeight: 900, color: '#166534',
+                                            cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 6px 0 #4ade80'
+                                        }} onMouseDown={e => e.currentTarget.style.transform = 'translateY(4px)'} onMouseUp={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                                            {num}문항 모험하기
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                <button onClick={() => setShowConfig4(false)} style={{ marginTop: 32, fontSize: 20, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                                    취소
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
 
