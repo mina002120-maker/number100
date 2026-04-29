@@ -205,7 +205,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbytO1H7BIR6fcMfxE8zjg6rlF6vS-PTQRijFlel4XIx74-7eiYexmKBaNVKbtUkfrX_/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyEX7xQKeN92s3DfmxlCVE04lRl-uKgdH7e5xwnisajyqMlriYehaWzPGkGKg8TIooh/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -309,21 +309,23 @@
             return K_ORDER[tens - 1] + K_UNITS[units];
         }
 
-        /* 수모형 개수 기반 힌트 텍스트 생성 (4단계용 - 우리말) */
+        /* 수모형 개수 기반 힌트 텍스트 생성 (4단계용 - 한자어 단서만, 우리말 정답은 숨김) */
         function getBlockHint(n) {
             const tens = Math.floor(n / 10);
             const units = n % 10;
-            const native = getNativeReading(n);
+            // 한자어 단서 (십모형: 십, 이십... / 낱개: 일, 이...)
+            const sinoTens = tens === 1 ? '십' : S_ORDER[tens - 1];
+            const sinoUnits = units > 0 ? S_UNITS[units] : '';
             if (units === 0) {
                 return [
-                    { label: '보라색 십 모형', count: tens, value: K_ORDER[tens - 1] },
-                    { native }
+                    { label: '보라색 십 모형', count: tens, sinoValue: sinoTens },
+                    { sinoFull: sinoTens }  // 한자어 전체만 (우리말 숨김)
                 ];
             }
             return [
-                { label: '보라색 십 모형', count: tens, value: K_ORDER[tens - 1] },
-                { label: '주황색 낱개', count: units, value: K_UNITS[units] },
-                { native }
+                { label: '보라색 십 모형', count: tens, sinoValue: sinoTens },
+                { label: '주황색 낱개', count: units, sinoValue: sinoUnits },
+                { sinoFull: sinoTens + sinoUnits }  // 한자어 전체만 (우리말 숨김)
             ];
         }
 
@@ -740,6 +742,13 @@
                 setAllProbs(newProbs);
                 setPhase(4);
                 setProbIdx(0);
+                setWrong([]);
+                setFeedback(null);
+                setStamp(false);
+                setTranscript('');
+                setVoiceResult(null);
+                setShowHint(false);
+                setShowConfig4(false);
                 setStep('play');
             };
 
@@ -982,8 +991,6 @@
                                 >💡</button>
                             )}
                         </div>
-
-                        {/* 힌트 팝업 모달 */}
                         {showHint && !voiceResult && p.blockHint && (
                             <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)' }}>
                                 <div className="pop-in" style={{
@@ -992,11 +999,13 @@
                                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
                                     maxWidth: 700, width: '90%', boxShadow: '0 30px 80px rgba(0,0,0,0.25)'
                                 }}>
-                                    <div style={{ fontSize: 24, fontWeight: 900, color: '#92400e' }}>💡 수 모형 개수를 세어 읽어봐요!</div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
+                                    <div style={{ fontSize: 22, fontWeight: 900, color: '#92400e' }}>💡 수 모형을 세어보고, 한자어로 읽어보세요!</div>
+                                    
+                                    {/* 수모형 + 한자어 단서 */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
                                         {p.blockHint.filter(h => h.label).map((h, i) => (
-                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                {i > 0 && <span style={{ fontSize: 30, fontWeight: 900, color: '#94a3b8' }}>+</span>}
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                {i > 0 && <span style={{ fontSize: 28, fontWeight: 900, color: '#94a3b8' }}>+</span>}
                                                 <div style={{
                                                     background: 'white',
                                                     border: `3px solid ${h.label.includes('십') ? '#a855f7' : '#fb923c'}`,
@@ -1005,19 +1014,21 @@
                                                 }}>
                                                     <div style={{ fontSize: 14, color: '#64748b', fontWeight: 700, marginBottom: 4 }}>{h.label}</div>
                                                     <div style={{ fontSize: 36, fontWeight: 900, color: h.label.includes('십') ? '#a855f7' : '#ea580c' }}>{h.count}개</div>
-                                                    <div style={{ fontSize: 22, fontWeight: 900, color: '#334155', marginTop: 4 }}>= "{h.value}"</div>
+                                                    <div style={{ fontSize: 20, fontWeight: 900, color: '#334155', marginTop: 4 }}>한자어: "{h.sinoValue}"</div>
                                                 </div>
                                             </div>
                                         ))}
-                                        <span style={{ fontSize: 32, fontWeight: 900, color: '#94a3b8' }}>=</span>
-                                        <div style={{
-                                            background: '#fef9c3', border: '5px solid #fbbf24',
-                                            borderRadius: 24, padding: '16px 28px', textAlign: 'center'
-                                        }}>
-                                            <div style={{ fontSize: 15, color: '#92400e', fontWeight: 700, marginBottom: 4 }}>이렇게 읽어요!</div>
-                                            <div style={{ fontSize: 48, fontWeight: 900, color: '#b45309' }}>&#34;{p.blockHint.find(h => h.native)?.native}&#34;</div>
-                                        </div>
                                     </div>
+
+                                    {/* 한자어 신호 + 우리말 자스틸히 생각해보기 안내 */}
+                                    <div style={{
+                                        background: '#fef3c7', border: '3px dashed #f59e0b',
+                                        borderRadius: 24, padding: '18px 28px', textAlign: 'center', width: '100%'
+                                    }}>
+                                        <div style={{ fontSize: 16, color: '#92400e', fontWeight: 700, marginBottom: 8 }}>한자어로는 <b style={{ fontSize: 28, color: '#b45309' }}>'{p.blockHint.find(h => h.sinoFull)?.sinoFull}'</b></div>
+                                        <div style={{ fontSize: 20, color: '#78350f', fontWeight: 700 }}>🤔 우리말로는 답이 나와 있지 않아요!<br />수 모형 개수를 세어서 스스로 읽어보세요!</div>
+                                    </div>
+
                                     <button onClick={() => setShowHint(false)} className="main-btn" style={{
                                         padding: '16px 60px', background: '#fbbf24', color: 'white',
                                         borderRadius: 999, fontSize: 24, fontWeight: 900,
