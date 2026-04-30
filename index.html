@@ -205,7 +205,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzB8nXXzrFusnApt-lCeUk8qmudrL4CvTjvcNc38Ocfjh0hLElpnLHpLFHK5xuDbyUQ/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxTjg_QRN32jbdBpHBSon3QT_ik91WXQuRNM19Af-A2F0n0Y8ds45HD6KHmTf6HBSG_/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -1261,7 +1261,9 @@
                                         </div>
                                         <div style={{ textAlign: 'center' }}>
                                             <div style={{ fontSize: 16, color: '#64748b', marginBottom: 8, fontWeight: 700 }}>정답</div>
-                                            <div style={{ fontSize: 56, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>{voiceStep === 'sino' ? p.sinoReading : p.nativeReading}</div>
+                                            <div style={{ fontSize: 56, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>
+                                                {voiceResult === 'correct' ? (voiceStep === 'sino' ? p.sinoReading : p.nativeReading) : '???'}
+                                            </div>
                                             <div style={{ fontSize: 20, color: '#94a3b8', marginTop: 8 }}>({p.q})</div>
                                         </div>
                                     </div>
@@ -1281,12 +1283,34 @@
                                                 {transcript && transcript.length < 15 ? (
                                                     <><span style={{ color: '#64748b', fontSize: 24 }}>학생은 '<b style={{ color: '#dc2626' }}>{transcript}</b>'(이)라고 읽었네요!</span><br /></>
                                                 ) : null}
-                                                다시 읽어볼까요?<br />
-                                                <span style={{ fontSize: 24, color: '#475569' }}>
-                                                    {voiceStep === 'sino'
-                                                        ? `십 모형이 ${Math.floor(p.q / 10)}개${p.q % 10 > 0 ? `, 낱개가 ${p.q % 10}개 ` : ' '}있어요. ${p.q}은(는) 한자어로 '${p.sinoReading}'(이)라고 읽어요.`
-                                                        : `한자어 '${p.sinoReading}'은(는) 우리말로 '${p.nativeReading}'(이)라고 읽어요.`
-                                                    }
+                                                <span style={{ fontSize: 24, color: '#475569', lineHeight: 1.5, display: 'block', marginTop: 8 }}>
+                                                    {(() => {
+                                                        const tens = Math.floor(p.q / 10);
+                                                        const units = p.q % 10;
+                                                        const isSino = voiceStep === 'sino';
+                                                        
+                                                        // 정답의 각 자리 읽기
+                                                        const tTens = isSino ? (tens === 1 ? '십' : S_ORDER[tens-1] + '십') : K_ORDER[tens-1];
+                                                        const tUnits = isSino ? S_UNITS[units] : K_UNITS[units];
+                                                        
+                                                        const spoken = transcript.replace(/\s/g, '');
+                                                        const tensMatch = tTens && spoken.includes(tTens);
+                                                        const unitsMatch = tUnits && (units === 0 ? !spoken.match(/[일이삼사오육칠팔구]($|[^십])/) : spoken.includes(tUnits));
+
+                                                        if (tensMatch && !unitsMatch) {
+                                                            return isSino 
+                                                                ? `십의 자리 '${tens}0'을(를) '${tTens}'(으)로 아주 잘 읽었어요! 일의 자리 '${units}'(낱개)은 어떻게 읽어야 할까요?`
+                                                                : `십의 자리 '${tens === 1 ? '십' : S_ORDER[tens-1] + '십'}'을(를) '${tTens}'(으)로 정확하게 바꿨어요! 일의 자리 '${units}'(낱개)은 우리말로 무엇일까요?`;
+                                                        } else if (!tensMatch && unitsMatch && tens > 0) {
+                                                            return isSino
+                                                                ? `일의 자리 '${units}'을(를) '${tUnits}'(으)로 잘 읽었어요! 십의 자리 '${tens}0'은 어떻게 읽어야 할까요?`
+                                                                : `일의 자리 '${S_UNITS[units]}'(을)를 '${tUnits}'(으)로 잘 읽었어요! 십의 자리 '${tens === 1 ? '십' : S_ORDER[tens-1] + '십'}'은 우리말로 무엇일까요?`;
+                                                        } else {
+                                                            return isSino
+                                                                ? `수 모형을 다시 볼까요? 십 모형은 ${tens}개, 낱개는 ${units}개예요. 천천히 다시 읽어보세요.`
+                                                                : `한자어 '${p.sinoReading}'을(를) 우리말로 바꿔보세요. 십의 자리는 '${K_ORDER[tens-1]}...', 일의 자리는 '${K_UNITS[units]}...' 중 무엇일까요?`;
+                                                        }
+                                                    })()}
                                                 </span>
                                             </span>
                                         )}
