@@ -205,7 +205,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby-sWAQ3tV0DCEw7RC9nFB14yuUPg8MCTg8riHXcJ4LKMpDhzBDHn0sd_lSbdLGkw/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx5kffK1DkW9aflbwGlivoB7rMVDyl7X9Qfw1SBWOdrTYe6IOnGbkCaFzVv2XO4WKU/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -304,6 +304,21 @@
                 
                 if (units > 0) result += S_UNITS[units];
                 return result;
+            });
+        }
+
+        /* 숫자를 우리말 읽기로 변환 (예: 49 -> 마흔아홉) */
+        function convertDigitsToNative(text) {
+            return text.replace(/[0-9]+/g, match => {
+                const num = parseInt(match, 10);
+                if (num === 0) return '영';
+                if (num >= 100) return match; 
+                
+                const tens = Math.floor(num / 10);
+                const units = num % 10;
+                
+                if (units === 0) return K_ORDER[tens - 1];
+                return K_ORDER[tens - 1] + K_UNITS[units];
             });
         }
 
@@ -633,7 +648,9 @@
 
             const next = () => {
                 if (feedback?.type === 'wrong') {
-                    setFeedback(null); return;
+                    setFeedback(null); 
+                    setDrops(new Array(p.ans.length).fill(null));
+                    return;
                 }
                 setFeedback(null);
                 if (probIdx < problems.length - 1) {
@@ -647,7 +664,18 @@
                         if (!completed.includes(phase)) setCompleted(pr => [...pr, phase]);
 
                         // 활동 기록 저장
-                        sendGasData('saveActivity', { stageNum: phase, studentNum: currentUser.num, studentName: currentUser.name });
+                        const correctItems = problems.filter(p => !wrong.find(w => w.id === p.id)).map(p => p.q).join(', ');
+                        const wrongItems = wrong.map(p => p.q).join(', ');
+                        const rate = Math.round(((problems.length - wrong.length) / problems.length) * 100) + '%';
+
+                        sendGasData('saveActivity', { 
+                            stageNum: phase, 
+                            studentNum: currentUser.num, 
+                            studentName: currentUser.name,
+                            rate: rate,
+                            correctList: correctItems,
+                            wrongList: wrongItems
+                        });
                     }
                 }
             };
@@ -689,7 +717,7 @@
                     if (interimText) {
                         let cleanText = interimText.replace(/\s/g, '').replace(/[.,!?~]/g, '');
                         cleanText = cleanText.replace(new RegExp(p.q.toString(), 'g'), voiceStep === 'sino' ? p.sinoReading : p.nativeReading);
-                        setInterimTranscript(convertDigitsToSino(cleanText));
+                        setInterimTranscript(voiceStep === 'sino' ? convertDigitsToSino(cleanText) : convertDigitsToNative(cleanText));
                     }
 
                     // 최종 결과 처리
@@ -698,7 +726,7 @@
                             .map(alt => {
                                 let cleanText = alt.transcript.replace(/\s/g, '').replace(/[.,!?~]/g, '');
                                 cleanText = cleanText.replace(new RegExp(p.q.toString(), 'g'), voiceStep === 'sino' ? p.sinoReading : p.nativeReading);
-                                return convertDigitsToSino(cleanText);
+                                return voiceStep === 'sino' ? convertDigitsToSino(cleanText) : convertDigitsToNative(cleanText);
                             });
                         
                         const targetReading = voiceStep === 'sino' ? p.sinoReading : p.nativeReading;
@@ -772,7 +800,18 @@
                         setStamp(true);
                         if (!completed.includes(phase)) setCompleted(pr => [...pr, phase]);
                         if (currentUser) {
-                            sendGasData('saveActivity', { stageNum: phase, studentNum: currentUser.num, studentName: currentUser.name });
+                            const correctItems = problems.filter(p => !wrong.find(w => w.id === p.id)).map(p => p.q).join(', ');
+                            const wrongItems = wrong.map(p => p.q).join(', ');
+                            const rate = Math.round(((problems.length - wrong.length) / problems.length) * 100) + '%';
+                            
+                            sendGasData('saveActivity', { 
+                                stageNum: phase, 
+                                studentNum: currentUser.num, 
+                                studentName: currentUser.name,
+                                rate: rate,
+                                correctList: correctItems,
+                                wrongList: wrongItems
+                            });
                         }
                     }
                 }
@@ -1038,29 +1077,29 @@
                                 <div style={{ fontSize: 120, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>{p.q}</div>
                                 
                                 {/* 한자어 빈칸 / 정답 표시 영역 */}
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 32, fontWeight: 900, color: '#db2777', marginTop: 12, background: 'white', padding: '12px 24px', borderRadius: 24, boxShadow: '0 4px 12px rgba(219,39,119,0.1)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: 44, fontWeight: 900, color: '#db2777', marginTop: 16, background: 'white', padding: '16px 32px', borderRadius: 32, boxShadow: '0 4px 16px rgba(219,39,119,0.1)' }}>
                                     {Math.floor(p.q / 10) > 1 && (
                                         <>
                                             <div style={{ 
-                                                minWidth: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                borderRadius: 16, border: voiceStep === 'sino' ? '3px dashed #f472b6' : '3px solid #f472b6', 
+                                                minWidth: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                borderRadius: 20, border: voiceStep === 'sino' ? '4px dashed #f472b6' : '4px solid #f472b6', 
                                                 background: voiceStep === 'sino' ? '#fdf2f8' : '#fce7f3',
                                                 color: voiceStep === 'sino' ? 'transparent' : '#be185d',
-                                                padding: '0 8px'
+                                                padding: '0 10px'
                                             }}>
                                                 {voiceStep === 'sino' ? '?' : S_UNITS[Math.floor(p.q / 10)]}
                                             </div>
-                                            <div>십</div>
+                                            <div style={{ fontSize: 40 }}>십</div>
                                         </>
                                     )}
-                                    {Math.floor(p.q / 10) === 1 && <div>십</div>}
+                                    {Math.floor(p.q / 10) === 1 && <div style={{ fontSize: 40 }}>십</div>}
                                     {p.q % 10 > 0 && (
                                         <div style={{ 
-                                            minWidth: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            borderRadius: 16, border: voiceStep === 'sino' ? '3px dashed #f472b6' : '3px solid #f472b6', 
+                                            minWidth: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            borderRadius: 20, border: voiceStep === 'sino' ? '4px dashed #f472b6' : '4px solid #f472b6', 
                                             background: voiceStep === 'sino' ? '#fdf2f8' : '#fce7f3',
                                             color: voiceStep === 'sino' ? 'transparent' : '#be185d',
-                                            padding: '0 8px'
+                                            padding: '0 10px'
                                         }}>
                                             {voiceStep === 'sino' ? '?' : S_UNITS[p.q % 10]}
                                         </div>
@@ -1237,12 +1276,18 @@
                                         {voiceResult === 'correct' ? (
                                             voiceStep === 'sino' ? '🌟 한자어로 잘 읽었어요!' : '🌟 우리말도 완벽해요!'
                                         ) : (
-                                            <span>다시 읽어볼까요?<br /><span style={{ fontSize: 24, color: '#475569' }}>
-                                                {voiceStep === 'sino'
-                                                    ? `십 모형이 ${Math.floor(p.q / 10)}개${p.q % 10 > 0 ? `, 낱개가 ${p.q % 10}개 ` : ' '}있어요. ${p.q}은(는) 한자어로 '${p.sinoReading}'(이)라고 읽어요.`
-                                                    : `한자어 '${p.sinoReading}'은(는) 우리말로 '${p.nativeReading}'(이)라고 읽어요.`
-                                                }
-                                            </span></span>
+                                            <span>
+                                                {transcript && transcript.length < 15 ? (
+                                                    <><span style={{ color: '#64748b', fontSize: 24 }}>학생은 '<b style={{ color: '#dc2626' }}>{transcript}</b>'(이)라고 읽었네요!</span><br /></>
+                                                ) : null}
+                                                다시 읽어볼까요?<br />
+                                                <span style={{ fontSize: 24, color: '#475569' }}>
+                                                    {voiceStep === 'sino'
+                                                        ? `십 모형이 ${Math.floor(p.q / 10)}개${p.q % 10 > 0 ? `, 낱개가 ${p.q % 10}개 ` : ' '}있어요. ${p.q}은(는) 한자어로 '${p.sinoReading}'(이)라고 읽어요.`
+                                                        : `한자어 '${p.sinoReading}'은(는) 우리말로 '${p.nativeReading}'(이)라고 읽어요.`
+                                                    }
+                                                </span>
+                                            </span>
                                         )}
                                     </div>
 
@@ -1537,7 +1582,21 @@
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                     <div style={{ display: 'flex', gap: 16 }}>
                                         {wrong.length > 0 && (
-                                            <button className="confirm-btn" onClick={() => { setReviewMode(true); setStamp(false); setProbIdx(0); }}
+                                            <button className="confirm-btn" onClick={() => { 
+                                                const firstWrong = wrong[0];
+                                                setReviewMode(true); 
+                                                setStamp(false); 
+                                                setProbIdx(0); 
+                                                // 기존 입력값 초기화
+                                                if (firstWrong && firstWrong.ans) {
+                                                    setDrops(new Array(firstWrong.ans.length).fill(null));
+                                                } else {
+                                                    setDrops([]);
+                                                }
+                                                setTranscript('');
+                                                setVoiceResult(null);
+                                                setVoiceStep('sino');
+                                            }}
                                                 style={{ flex: 1, padding: '20px', background: '#f97316', color: 'white', borderRadius: 24, fontSize: 26, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 24px rgba(249,115,22,0.4)' }}>
                                                 🔄 틀린 문제 다시 풀기
                                             </button>
