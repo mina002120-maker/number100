@@ -205,7 +205,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzshXGlcWNNWX0qC0wNZ2SsTdjvAX5HH8xeq0_aP0fCMdOHGuwothDifSteou2KuO-M/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby-sWAQ3tV0DCEw7RC9nFB14yuUPg8MCTg8riHXcJ4LKMpDhzBDHn0sd_lSbdLGkw/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -748,10 +748,13 @@
                 };
                 recog.onend = () => { setIsRecording(false); setInterimTranscript(''); };
                 recogRef.current = recog;
-                // 이전 인식기가 완전히 종료된 후 시작 (두 번째 문제부터 인식 맙힙 해결)
-                setTimeout(() => {
-                    try { recog.start(); } catch(e) { console.warn('recog.start() 실패:', e); }
-                }, 150);
+                try { 
+                    recog.start(); 
+                } catch(e) { 
+                    console.warn('recog.start() 실패:', e);
+                    setIsRecording(false);
+                    setTranscript('마이크를 켤 수 없어요. 브라우저를 새로고침 해보세요!');
+                }
             };
 
             // 음성 다음 문제
@@ -1045,7 +1048,7 @@
                                                 color: voiceStep === 'sino' ? 'transparent' : '#be185d',
                                                 padding: '0 8px'
                                             }}>
-                                                {voiceStep === 'sino' ? '?' : S_ORDER[Math.floor(p.q / 10) - 1]}
+                                                {voiceStep === 'sino' ? '?' : S_UNITS[Math.floor(p.q / 10)]}
                                             </div>
                                             <div>십</div>
                                         </>
