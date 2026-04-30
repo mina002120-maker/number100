@@ -205,7 +205,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzEF-tZJ6IImmkxWPhGPlf6UmTXtYdLXa8kOrOL02rcaN9nlE7B7ZJHO1O6Gs87tKZW/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzshXGlcWNNWX0qC0wNZ2SsTdjvAX5HH8xeq0_aP0fCMdOHGuwothDifSteou2KuO-M/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -1033,6 +1033,36 @@
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                                 <div style={{ fontSize: 16, fontWeight: 700, color: '#64748b' }}>숫자</div>
                                 <div style={{ fontSize: 120, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>{p.q}</div>
+                                
+                                {/* 한자어 빈칸 / 정답 표시 영역 */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 32, fontWeight: 900, color: '#db2777', marginTop: 12, background: 'white', padding: '12px 24px', borderRadius: 24, boxShadow: '0 4px 12px rgba(219,39,119,0.1)' }}>
+                                    {Math.floor(p.q / 10) > 1 && (
+                                        <>
+                                            <div style={{ 
+                                                minWidth: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                borderRadius: 16, border: voiceStep === 'sino' ? '3px dashed #f472b6' : '3px solid #f472b6', 
+                                                background: voiceStep === 'sino' ? '#fdf2f8' : '#fce7f3',
+                                                color: voiceStep === 'sino' ? 'transparent' : '#be185d',
+                                                padding: '0 8px'
+                                            }}>
+                                                {voiceStep === 'sino' ? '?' : S_ORDER[Math.floor(p.q / 10) - 1]}
+                                            </div>
+                                            <div>십</div>
+                                        </>
+                                    )}
+                                    {Math.floor(p.q / 10) === 1 && <div>십</div>}
+                                    {p.q % 10 > 0 && (
+                                        <div style={{ 
+                                            minWidth: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            borderRadius: 16, border: voiceStep === 'sino' ? '3px dashed #f472b6' : '3px solid #f472b6', 
+                                            background: voiceStep === 'sino' ? '#fdf2f8' : '#fce7f3',
+                                            color: voiceStep === 'sino' ? 'transparent' : '#be185d',
+                                            padding: '0 8px'
+                                        }}>
+                                            {voiceStep === 'sino' ? '?' : S_UNITS[p.q % 10]}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             {/* 힌트 버튼 */}
                             {!voiceResult && (
@@ -1093,21 +1123,7 @@
                             </div>
                         )}
 
-                        {/* 단계별 시각적 힌트 */}
-                        {!voiceResult && voiceStep === 'sino' && (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: 40, fontWeight: 900, color: '#64748b', background: 'white', padding: '16px 40px', borderRadius: 24, border: '4px dashed #cbd5e1' }}>
-                                {Math.floor(p.q / 10) > 1 && <><div style={{ color: '#cbd5e1' }}>( &nbsp; &nbsp; )</div> <div>십</div></>}
-                                {Math.floor(p.q / 10) === 1 && <div>십</div>}
-                                {p.q % 10 > 0 && <div style={{ color: '#cbd5e1' }}>( &nbsp; &nbsp; )</div>}
-                            </div>
-                        )}
-                        
-                        {!voiceResult && voiceStep === 'native' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, background: 'white', padding: '16px 48px', borderRadius: 24, border: '4px solid #bfdbfe', boxShadow: '0 8px 16px rgba(0,0,0,0.05)' }}>
-                                <div style={{ fontSize: 20, fontWeight: 700, color: '#64748b' }}>완성한 한자어</div>
-                                <div style={{ fontSize: 44, fontWeight: 900, color: '#2563eb' }}>{p.sinoReading}</div>
-                            </div>
-                        )}
+
 
                         {/* 안내 문구 */}
                         {!voiceResult && (
@@ -1218,8 +1234,11 @@
                                         {voiceResult === 'correct' ? (
                                             voiceStep === 'sino' ? '🌟 한자어로 잘 읽었어요!' : '🌟 우리말도 완벽해요!'
                                         ) : (
-                                            <span>다시 읽어볼까요?<br /><span style={{ fontSize: 22, color: '#475569' }}>
-                                                {p.q}은(는) {voiceStep === 'sino' ? '한자어로' : '우리말로'} <b style={{ color: '#dc2626' }}>'{voiceStep === 'sino' ? p.sinoReading : p.nativeReading}'</b>라고 읽어요
+                                            <span>다시 읽어볼까요?<br /><span style={{ fontSize: 24, color: '#475569' }}>
+                                                {voiceStep === 'sino'
+                                                    ? `십 모형이 ${Math.floor(p.q / 10)}개${p.q % 10 > 0 ? `, 낱개가 ${p.q % 10}개 ` : ' '}있어요. ${p.q}은(는) 한자어로 '${p.sinoReading}'(이)라고 읽어요.`
+                                                    : `한자어 '${p.sinoReading}'은(는) 우리말로 '${p.nativeReading}'(이)라고 읽어요.`
+                                                }
                                             </span></span>
                                         )}
                                     </div>
@@ -1228,13 +1247,16 @@
                                     <div style={{ display: 'flex', gap: 16, width: '100%' }}>
                                         {voiceResult === 'wrong' && (
                                             <button onClick={() => {
+                                                if (!reviewMode && !wrong.find(w => w.id === p.id)) {
+                                                    setWrong(pr => [...pr, p]);
+                                                }
                                                 setTranscript('');
                                                 setVoiceResult(null);
                                             }} className="main-btn" style={{ flex: 1, padding: '20px', background: '#f97316', color: 'white', borderRadius: 24, fontSize: 28, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(249,115,22,0.3)' }}>
                                                 🔄 다시 해보기
                                             </button>
                                         )}
-                                        {voiceResult === 'correct' && voiceStep === 'sino' ? (
+                                        {voiceResult === 'correct' && voiceStep === 'sino' && (
                                             <button onClick={() => {
                                                 setTranscript('');
                                                 setVoiceResult(null);
@@ -1242,7 +1264,8 @@
                                             }} className="main-btn" style={{ flex: 1, padding: '20px', background: '#3b82f6', color: 'white', borderRadius: 24, fontSize: 28, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(59,130,246,0.3)' }}>
                                                 우리말로 바꾸기 ▶
                                             </button>
-                                        ) : (
+                                        )}
+                                        {voiceResult === 'correct' && voiceStep === 'native' && (
                                             <button onClick={nextVoice} className="main-btn" style={{ flex: 1, padding: '20px', background: '#22c55e', color: 'white', borderRadius: 24, fontSize: 28, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(34,197,94,0.3)' }}>
                                                 {probIdx < problems.length - 1 ? '다음 문제 ▶' : '완료! 🎉'}
                                             </button>
