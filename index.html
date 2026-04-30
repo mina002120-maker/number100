@@ -205,7 +205,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx5kffK1DkW9aflbwGlivoB7rMVDyl7X9Qfw1SBWOdrTYe6IOnGbkCaFzVv2XO4WKU/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzrHUi-5ec7MscVpCJfgeVF7RxYXi-eGHemOwjLaWAeYcOHlVKR_fMAsBNVK5kiAqMr/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -219,7 +219,7 @@
 
             return new Promise((resolve, reject) => {
                 const callbackName = 'gas_callback_' + Math.round(Math.random() * 1000000);
-                
+
                 // 타임아웃 설정 (10초)
                 const timeout = setTimeout(() => {
                     delete window[callbackName];
@@ -238,7 +238,7 @@
                 url.searchParams.append('action', action);
                 url.searchParams.append('callback', callbackName);
                 Object.keys(data).forEach(key => url.searchParams.append(key, data[key]));
-                
+
                 script.src = url.toString();
                 script.onerror = () => {
                     clearTimeout(timeout);
@@ -294,14 +294,14 @@
                 const num = parseInt(match, 10);
                 if (num === 0) return '영';
                 if (num >= 100) return match; // 100 이상은 처리 생략 (1~99 범위만)
-                
+
                 let result = '';
                 const tens = Math.floor(num / 10);
                 const units = num % 10;
-                
+
                 if (tens === 1) result += '십';
                 else if (tens > 1) result += S_ORDER[tens - 1];
-                
+
                 if (units > 0) result += S_UNITS[units];
                 return result;
             });
@@ -312,11 +312,11 @@
             return text.replace(/[0-9]+/g, match => {
                 const num = parseInt(match, 10);
                 if (num === 0) return '영';
-                if (num >= 100) return match; 
-                
+                if (num >= 100) return match;
+
                 const tens = Math.floor(num / 10);
                 const units = num % 10;
-                
+
                 if (units === 0) return K_ORDER[tens - 1];
                 return K_ORDER[tens - 1] + K_UNITS[units];
             });
@@ -446,7 +446,7 @@
                 }
                 return result;
             };
-            
+
             // 1단계: 10씩 묶기 (10의 배수 중 랜덤 3개)
             const tens = shuffle([10, 20, 30, 40, 50, 60, 70, 80, 90]).slice(0, 3);
             const p1 = tens.map(n => ({
@@ -454,9 +454,9 @@
                 ans: [NUM_WORDS[n].s, NUM_WORDS[n].k],
                 hint: `십모형이 ${n / 10}개예요.\n10이 ${n / 10}개인 수를 어떻게 읽을까요?`
             }));
-            
+
             // 2단계: 수 쓰기 (11~99 중 랜덤 3개, 일의 자리가 0이 아닌 수)
-            const twoDigits = shuffle(Array.from({length: 89}, (_, i) => i + 11).filter(n => n % 10 !== 0)).slice(0, 3);
+            const twoDigits = shuffle(Array.from({ length: 89 }, (_, i) => i + 11).filter(n => n % 10 !== 0)).slice(0, 3);
             const p2 = twoDigits.map(n => {
                 const ten = Math.floor(n / 10) * 10, unit = n % 10;
                 return {
@@ -466,20 +466,20 @@
                     hint: `'${NUM_WORDS[ten].k}'은 십모형 ${Math.floor(n / 10)}개,\n'${K_UNITS[unit]}'은 낱개 ${unit}개를 의미해요.`
                 };
             });
-            
+
             // 3단계: 수 읽기 (11~99 중 랜덤 3개, 2단계와 겹치지 않도록)
-            const readPool = shuffle(Array.from({length: 89}, (_, i) => i + 11).filter(n => n % 10 !== 0 && !twoDigits.includes(n))).slice(0, 3);
+            const readPool = shuffle(Array.from({ length: 89 }, (_, i) => i + 11).filter(n => n % 10 !== 0 && !twoDigits.includes(n))).slice(0, 3);
             const p3 = readPool.map(n => ({
                 id: `p3-${n}`, phase: 3, type: 'read', q: n,
                 ans: [NUM_WORDS[Math.floor(n / 10) * 10].k, K_UNITS[n % 10]],
                 hint: `십모형이 ${Math.floor(n / 10)}개, 낱개가 ${n % 10}개 있어요.\n어떻게 읽을까요?`
             }));
-            
+
             // 4단계: 우리말로 읽기 (랜덤 생성)
             const pool = [];
             for (let i = 11; i < 100; i++) pool.push(i);
             const stage4Numbers = shuffle(pool).slice(0, stage4Count);
-            
+
             const p4 = stage4Numbers.map(n => {
                 const native = getNativeReading(n);
                 const sinoTens = Math.floor(n / 10) === 1 ? '십' : S_ORDER[Math.floor(n / 10) - 1];
@@ -534,7 +534,7 @@
             useEffect(() => {
                 if (step === 'login' && students.length === 0) {
                     setIsLoading(true);
-                    
+
                     const loadStudents = async () => {
                         let data = null;
                         if (GAS_WEB_APP_URL !== "YOUR_GAS_WEB_APP_URL_HERE") {
@@ -648,7 +648,7 @@
 
             const next = () => {
                 if (feedback?.type === 'wrong') {
-                    setFeedback(null); 
+                    setFeedback(null);
                     setDrops(new Array(p.ans.length).fill(null));
                     return;
                 }
@@ -668,9 +668,9 @@
                         const wrongItems = wrong.map(p => p.q).join(', ');
                         const rate = Math.round(((problems.length - wrong.length) / problems.length) * 100) + '%';
 
-                        sendGasData('saveActivity', { 
-                            stageNum: phase, 
-                            studentNum: currentUser.num, 
+                        sendGasData('saveActivity', {
+                            stageNum: phase,
+                            studentNum: currentUser.num,
                             studentName: currentUser.name,
                             rate: rate,
                             correctList: correctItems,
@@ -728,11 +728,11 @@
                                 cleanText = cleanText.replace(new RegExp(p.q.toString(), 'g'), voiceStep === 'sino' ? p.sinoReading : p.nativeReading);
                                 return voiceStep === 'sino' ? convertDigitsToSino(cleanText) : convertDigitsToNative(cleanText);
                             });
-                        
+
                         const targetReading = voiceStep === 'sino' ? p.sinoReading : p.nativeReading;
                         let matched = false;
                         let bestText = alternatives[0];
-                        
+
                         // 엄격한 매칭: 정확히 일치하거나 한글만 추출 후 정확히 일치
                         for (const alt of alternatives) {
                             // 1) 정확히 일치
@@ -741,27 +741,28 @@
                             const cleanAlt = alt.replace(/[^가-힣]/g, '');
                             const cleanValid = targetReading.replace(/[^가-힣]/g, '');
                             if (cleanAlt.length >= 2 && cleanAlt === cleanValid) {
-                                matched = true; bestText = cleanAlt; break; }
+                                matched = true; bestText = cleanAlt; break;
+                            }
                         }
-                        
+
                         setInterimTranscript('');
                         setTranscript(bestText);
                         setVoiceResult(matched ? 'correct' : 'wrong');
                         setIsRecording(false);
-                        
+
                         if (matched) {
                             speak(voiceStep === 'sino' ? '정답이야! 이제 우리말로 바꿔볼까?' : '정답이야! 너무 잘 읽었어.', muted);
                             if (window.confetti && voiceStep === 'native') window.confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#3b82f6', '#fbbf24', '#ef4444'] });
                         } else {
                             speak('다시 한번 읽어볼까?', muted);
                         }
-                        
-                        sendGasData('saveVoiceRecord', { 
-                            studentNum: currentUser.num, 
-                            studentName: currentUser.name, 
+
+                        sendGasData('saveVoiceRecord', {
+                            studentNum: currentUser.num,
+                            studentName: currentUser.name,
                             totalCount: problems.length,
                             probIndex: probIdx + 1,
-                            transcribed: bestText, 
+                            transcribed: bestText,
                             isCorrect: matched ? '정답' : '오답',
                             sessionId: sessionId
                         });
@@ -776,9 +777,9 @@
                 };
                 recog.onend = () => { setIsRecording(false); setInterimTranscript(''); };
                 recogRef.current = recog;
-                try { 
-                    recog.start(); 
-                } catch(e) { 
+                try {
+                    recog.start();
+                } catch (e) {
                     console.warn('recog.start() 실패:', e);
                     setIsRecording(false);
                     setTranscript('마이크를 켤 수 없어요. 브라우저를 새로고침 해보세요!');
@@ -803,10 +804,10 @@
                             const correctItems = problems.filter(p => !wrong.find(w => w.id === p.id)).map(p => p.q).join(', ');
                             const wrongItems = wrong.map(p => p.q).join(', ');
                             const rate = Math.round(((problems.length - wrong.length) / problems.length) * 100) + '%';
-                            
-                            sendGasData('saveActivity', { 
-                                stageNum: phase, 
-                                studentNum: currentUser.num, 
+
+                            sendGasData('saveActivity', {
+                                stageNum: phase,
+                                studentNum: currentUser.num,
                                 studentName: currentUser.name,
                                 rate: rate,
                                 correctList: correctItems,
@@ -1025,7 +1026,7 @@
                                 <div style={{ fontSize: 64, marginBottom: 16 }}>🗣️</div>
                                 <h3 style={{ fontSize: 42, fontWeight: 900, color: '#166534', marginBottom: 8 }}>4단계: 소리로 읽기</h3>
                                 <p style={{ fontSize: 24, color: '#475569', marginBottom: 32, fontWeight: 700 }}>몇 문제를 풀어볼까요?</p>
-                                
+
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                     {[3, 5, 10].map(num => (
                                         <button key={num} onClick={() => startStage4(num)} className="main-btn" style={{
@@ -1037,7 +1038,7 @@
                                         </button>
                                     ))}
                                 </div>
-                                
+
                                 <button onClick={() => setShowConfig4(false)} style={{ marginTop: 32, fontSize: 20, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
                                     취소
                                 </button>
@@ -1075,14 +1076,14 @@
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                                 <div style={{ fontSize: 16, fontWeight: 700, color: '#64748b' }}>숫자</div>
                                 <div style={{ fontSize: 120, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>{p.q}</div>
-                                
+
                                 {/* 한자어 빈칸 / 정답 표시 영역 */}
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: 44, fontWeight: 900, color: '#db2777', marginTop: 16, background: 'white', padding: '16px 32px', borderRadius: 32, boxShadow: '0 4px 16px rgba(219,39,119,0.1)' }}>
                                     {Math.floor(p.q / 10) > 1 && (
                                         <>
-                                            <div style={{ 
+                                            <div style={{
                                                 minWidth: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                borderRadius: 20, border: voiceStep === 'sino' ? '4px dashed #f472b6' : '4px solid #f472b6', 
+                                                borderRadius: 20, border: voiceStep === 'sino' ? '4px dashed #f472b6' : '4px solid #f472b6',
                                                 background: voiceStep === 'sino' ? '#fdf2f8' : '#fce7f3',
                                                 color: voiceStep === 'sino' ? 'transparent' : '#be185d',
                                                 padding: '0 10px'
@@ -1094,9 +1095,9 @@
                                     )}
                                     {Math.floor(p.q / 10) === 1 && <div style={{ fontSize: 40 }}>십</div>}
                                     {p.q % 10 > 0 && (
-                                        <div style={{ 
+                                        <div style={{
                                             minWidth: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            borderRadius: 20, border: voiceStep === 'sino' ? '4px dashed #f472b6' : '4px solid #f472b6', 
+                                            borderRadius: 20, border: voiceStep === 'sino' ? '4px dashed #f472b6' : '4px solid #f472b6',
                                             background: voiceStep === 'sino' ? '#fdf2f8' : '#fce7f3',
                                             color: voiceStep === 'sino' ? 'transparent' : '#be185d',
                                             padding: '0 10px'
@@ -1322,7 +1323,7 @@
                                 </div>
                             </div>
                         )}
-                        </div>
+                    </div>
 
                     {/* 완료 스탬프 오버레이 */}
                     {stamp && (
@@ -1582,11 +1583,11 @@
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                                     <div style={{ display: 'flex', gap: 16 }}>
                                         {wrong.length > 0 && (
-                                            <button className="confirm-btn" onClick={() => { 
+                                            <button className="confirm-btn" onClick={() => {
                                                 const firstWrong = wrong[0];
-                                                setReviewMode(true); 
-                                                setStamp(false); 
-                                                setProbIdx(0); 
+                                                setReviewMode(true);
+                                                setStamp(false);
+                                                setProbIdx(0);
                                                 // 기존 입력값 초기화
                                                 if (firstWrong && firstWrong.ans) {
                                                     setDrops(new Array(firstWrong.ans.length).fill(null));
