@@ -205,7 +205,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzfE-zqIF8BJQedmt0K4WwcZ9DHg4Gx0LOlo7Ct9fXQt-WfvweGCjb4O-iQznTbwZAu/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwVJC5Ox0vG5dPOkuKC_NYFSGHK6bW2A6zKp6daWz17Cy3nshufVNYlNcSMeDIP8d-V/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -688,6 +688,7 @@
                     // 중간 결과는 실시간 표시
                     if (interimText) {
                         let cleanText = interimText.replace(/\s/g, '').replace(/[.,!?~]/g, '');
+                        cleanText = cleanText.replace(new RegExp(p.q.toString(), 'g'), voiceStep === 'sino' ? p.sinoReading : p.nativeReading);
                         setInterimTranscript(convertDigitsToSino(cleanText));
                     }
 
@@ -696,6 +697,7 @@
                         const alternatives = Array.from(event.results[event.results.length - 1])
                             .map(alt => {
                                 let cleanText = alt.transcript.replace(/\s/g, '').replace(/[.,!?~]/g, '');
+                                cleanText = cleanText.replace(new RegExp(p.q.toString(), 'g'), voiceStep === 'sino' ? p.sinoReading : p.nativeReading);
                                 return convertDigitsToSino(cleanText);
                             });
                         
@@ -1048,51 +1050,60 @@
                                 >💡</button>
                             )}
                         </div>
-                        {showHint && !voiceResult && p.blockHint && (
+                        {showHint && !voiceResult && (
                             <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)' }}>
                                 <div className="pop-in" style={{
                                     background: '#fffbeb', border: '6px solid #fbbf24',
-                                    borderRadius: 40, padding: '50px 60px',
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 32,
-                                    maxWidth: 1100, width: '95%', boxShadow: '0 30px 80px rgba(0,0,0,0.25)'
+                                    borderRadius: 40, padding: '40px 60px',
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
+                                    maxWidth: 900, width: '95%', boxShadow: '0 30px 80px rgba(0,0,0,0.25)'
                                 }}>
-                                    <div style={{ fontSize: 40, fontWeight: 900, color: '#92400e' }}>💡 수 모형을 세어보고, 한자어로 읽어보세요!</div>
-                                    
-                                    {/* 수모형 + 한자어 단서 */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', justifyContent: 'center' }}>
-                                        {p.blockHint.filter(h => h.label).map((h, i) => (
-                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                                {i > 0 && <span style={{ fontSize: 48, fontWeight: 900, color: '#94a3b8' }}>+</span>}
-                                                <div style={{
-                                                    background: 'white',
-                                                    border: `4px solid ${h.label.includes('십') ? '#a855f7' : '#fb923c'}`,
-                                                    borderRadius: 28, padding: '24px 40px', textAlign: 'center',
-                                                    boxShadow: '0 6px 16px rgba(0,0,0,0.08)'
-                                                }}>
-                                                    <div style={{ fontSize: 24, color: '#64748b', fontWeight: 700, marginBottom: 8 }}>{h.label}</div>
-                                                    <div style={{ fontSize: 64, fontWeight: 900, color: h.label.includes('십') ? '#a855f7' : '#ea580c' }}>{h.count}개</div>
-                                                    <div style={{ fontSize: 34, fontWeight: 900, color: '#334155', marginTop: 8 }}>한자어: "{h.sinoValue}"</div>
-                                                </div>
+                                    <div style={{ fontSize: 36, fontWeight: 900, color: '#92400e' }}>💡 우리말로 숫자 읽기 표</div>
+                                    <div style={{ display: 'flex', gap: 32, width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                        {/* 십의 자리 표 */}
+                                        <div style={{ background: 'white', borderRadius: 24, padding: 24, border: '4px solid #fde68a', flex: 1, minWidth: 260, boxShadow: '0 8px 16px rgba(0,0,0,0.05)' }}>
+                                            <div style={{ fontSize: 22, color: '#b45309', fontWeight: 900, textAlign: 'center', marginBottom: 16, borderBottom: '2px dashed #fde68a', paddingBottom: 12 }}>십 단위 (10씩 묶음)</div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 26, fontWeight: 700, color: '#475569' }}>
+                                                {K_ORDER.map((k, i) => <React.Fragment key={`k-${i}`}>
+                                                    <div style={{ textAlign: 'right', color: '#94a3b8' }}>{(i + 1) * 10}</div>
+                                                    <div style={{ color: '#ea580c' }}>{k}</div>
+                                                </React.Fragment>)}
                                             </div>
-                                        ))}
+                                        </div>
+                                        {/* 일의 자리 표 */}
+                                        <div style={{ background: 'white', borderRadius: 24, padding: 24, border: '4px solid #bbf7d0', flex: 1, minWidth: 260, boxShadow: '0 8px 16px rgba(0,0,0,0.05)' }}>
+                                            <div style={{ fontSize: 22, color: '#16a34a', fontWeight: 900, textAlign: 'center', marginBottom: 16, borderBottom: '2px dashed #bbf7d0', paddingBottom: 12 }}>일 단위 (낱개)</div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 26, fontWeight: 700, color: '#475569' }}>
+                                                {K_UNITS.map((u, i) => u ? <React.Fragment key={`u-${i}`}>
+                                                    <div style={{ textAlign: 'right', color: '#94a3b8' }}>{i}</div>
+                                                    <div style={{ color: '#16a34a' }}>{u}</div>
+                                                </React.Fragment> : null)}
+                                            </div>
+                                        </div>
                                     </div>
-
-                                    {/* 한자어 단서 + 우리말 생각해보기 안내 */}
-                                    <div style={{
-                                        background: '#fef3c7', border: '4px dashed #f59e0b',
-                                        borderRadius: 32, padding: '32px 48px', textAlign: 'center', width: '100%'
-                                    }}>
-                                        <div style={{ fontSize: 30, color: '#92400e', fontWeight: 700, marginBottom: 12 }}>한자어로는 <b style={{ fontSize: 52, color: '#b45309' }}>'{p.blockHint.find(h => h.sinoFull)?.sinoFull}'</b></div>
-                                        <div style={{ fontSize: 34, color: '#78350f', fontWeight: 700, lineHeight: 1.5 }}>🤔 우리말로는 답이 나와 있지 않아요!<br />수 모형 개수를 세어서 스스로 읽어보세요!</div>
-                                    </div>
-
                                     <button onClick={() => setShowHint(false)} className="main-btn" style={{
-                                        padding: '20px 80px', background: '#fbbf24', color: 'white',
-                                        borderRadius: 999, fontSize: 32, fontWeight: 900,
+                                        padding: '16px 64px', background: '#fbbf24', color: 'white', marginTop: 16,
+                                        borderRadius: 999, fontSize: 28, fontWeight: 900,
                                         border: 'none', cursor: 'pointer',
                                         boxShadow: '0 8px 20px rgba(251,191,36,0.35)'
                                     }}>알겠어요! 👍</button>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* 단계별 시각적 힌트 */}
+                        {!voiceResult && voiceStep === 'sino' && (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: 40, fontWeight: 900, color: '#64748b', background: 'white', padding: '16px 40px', borderRadius: 24, border: '4px dashed #cbd5e1' }}>
+                                {Math.floor(p.q / 10) > 1 && <><div style={{ color: '#cbd5e1' }}>( &nbsp; &nbsp; )</div> <div>십</div></>}
+                                {Math.floor(p.q / 10) === 1 && <div>십</div>}
+                                {p.q % 10 > 0 && <div style={{ color: '#cbd5e1' }}>( &nbsp; &nbsp; )</div>}
+                            </div>
+                        )}
+                        
+                        {!voiceResult && voiceStep === 'native' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, background: 'white', padding: '16px 48px', borderRadius: 24, border: '4px solid #bfdbfe', boxShadow: '0 8px 16px rgba(0,0,0,0.05)' }}>
+                                <div style={{ fontSize: 20, fontWeight: 700, color: '#64748b' }}>완성한 한자어</div>
+                                <div style={{ fontSize: 44, fontWeight: 900, color: '#2563eb' }}>{p.sinoReading}</div>
                             </div>
                         )}
 
