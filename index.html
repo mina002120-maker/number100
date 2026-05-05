@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>'100까지의 수' 모험 - 수 읽고 쓰기</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,25 +12,42 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
+        html, body {
             margin: 0;
             padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #F4FAF6;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
 
         body {
             font-family: 'Jua', sans-serif;
-            background-color: #F4FAF6;
-            overflow: hidden;
-            touch-action: none;
-            height: 100vh;
         }
 
         #root {
+            width: 100vw;
             height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+            background-color: #F4FAF6;
+        }
+
+        .scale-container {
+            width: 1280px;
+            height: 800px;
+            position: relative;
+            transform-origin: center center;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            background-color: #F4FAF6;
+            overflow: hidden;
         }
 
         @keyframes float {
@@ -205,7 +222,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxTjg_QRN32jbdBpHBSon3QT_ik91WXQuRNM19Af-A2F0n0Y8ds45HD6KHmTf6HBSG_/exec";
+        const GAS_WEB_APP_URL = "YOUR_GAS_WEB_APP_URL_HERE";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -409,14 +426,14 @@
         }
 
         /* ===== 선택 카드 ===== */
-        function SelectionCard({ value, onClick, small, colorScheme }) {
+        function SelectionCard({ value, onClick, small, colorScheme, selected }) {
             const styles = {
-                blue: { border: '#93c5fd', shadow: '#60a5fa' },
-                pink: { border: '#f9a8d4', shadow: '#f472b6' },
-                yellow: { border: '#fde68a', shadow: '#fcd34d' },
-                green: { border: '#86efac', shadow: '#4ade80' },
-                orange: { border: '#fdba74', shadow: '#fb923c' },
-                purple: { border: '#d8b4fe', shadow: '#a855f7' }
+                blue: { border: '#93c5fd', shadow: '#60a5fa', bg: '#3b82f6', activeBorder: '#2563eb' },
+                pink: { border: '#f9a8d4', shadow: '#f472b6', bg: '#ec4899', activeBorder: '#db2777' },
+                yellow: { border: '#fde68a', shadow: '#fcd34d', bg: '#facc15', activeBorder: '#eab308' },
+                green: { border: '#86efac', shadow: '#4ade80', bg: '#22c55e', activeBorder: '#16a34a' },
+                orange: { border: '#fdba74', shadow: '#fb923c', bg: '#f97316', activeBorder: '#ea580c' },
+                purple: { border: '#d8b4fe', shadow: '#a855f7', bg: '#a855f7', activeBorder: '#9333ea' }
             };
             const s = styles[colorScheme] || styles.yellow;
             return (
@@ -424,13 +441,17 @@
                     onClick={() => onClick(value)}
                     className="card-item"
                     style={{
-                        background: 'white', padding: small ? '14px 22px' : '20px 32px', borderRadius: small ? 20 : 24,
-                        border: `4px solid ${s.border}`, boxShadow: `0 ${small ? 4 : 6}px 0 ${s.shadow}`,
-                        minWidth: small ? 75 : 100, textAlign: 'center', display: 'inline-block',
-                        cursor: 'pointer', outline: 'none'
+                        background: selected ? s.bg : 'white', 
+                        padding: small ? '0px' : '24px 40px', borderRadius: small ? 16 : 32,
+                        border: selected ? `${small ? 4 : 5}px solid ${s.activeBorder}` : `${small ? 4 : 5}px solid ${s.border}`, 
+                        boxShadow: selected ? 'none' : `0 ${small ? 4 : 8}px 0 ${s.shadow}`,
+                        transform: selected ? 'translateY(4px)' : 'none',
+                        width: small ? 90 : 'auto', minWidth: small ? 90 : 120, height: small ? 80 : 'auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', outline: 'none', boxSizing: 'border-box',
+                        transition: 'all 0.1s'
                     }}
                 >
-                    <span style={{ fontSize: small ? 26 : 36, fontWeight: 900, color: '#334155', whiteSpace: 'nowrap' }}>{value}</span>
+                    <span style={{ fontSize: small ? 32 : 48, fontWeight: 900, color: selected ? 'white' : '#334155', whiteSpace: 'nowrap' }}>{value}</span>
                 </button>
             );
         }
@@ -620,12 +641,12 @@
                 if (ok) {
                     let msg = "";
                     if (p.phase === 1) {
-                        msg = `정답이야!\n\n십모형이 ${p.q / 10}개니까\n10이 ${p.q / 10}개인 수가 맞네!`;
+                        msg = `십모형이 ${p.q / 10}개니까\n10이 ${p.q / 10}개인 수가 맞네!`;
                     } else if (p.phase === 2) {
                         const val = drops.join('');
-                        msg = `그렇지!\n\n십모형 ${val[0]}개와\n낱개 ${val[1]}개를 숫자로 아주 잘 썼어!`;
+                        msg = `십모형 ${val[0]}개와\n낱개 ${val[1]}개를 숫자로 아주 잘 썼어!`;
                     } else if (p.phase === 3) {
-                        msg = `완벽해!\n\n${p.q}은 십모형 ${Math.floor(p.q / 10)}개와\n낱개 ${p.q % 10}개가 있는 수야!`;
+                        msg = `${p.q}은 십모형 ${Math.floor(p.q / 10)}개와\n낱개 ${p.q % 10}개가 있는 수야!`;
                     }
 
                     setFeedback({ type: 'correct', msg: msg });
@@ -640,8 +661,41 @@
                         });
                     }
                 } else {
+                    let msg = "";
+                    if (p.phase === 1) {
+                        const hasSino = drops.includes(p.ans[0]);
+                        const hasNative = drops.includes(p.ans[1]);
+                        if (hasSino && !hasNative) {
+                            msg = `'${p.ans[0]}'은 잘 찾았어!\n나머지 하나도 한번 찾아볼까?`;
+                        } else if (!hasSino && hasNative) {
+                            msg = `'${p.ans[1]}'은 잘 찾았어!\n나머지 하나도 한번 찾아볼까?`;
+                        } else {
+                            msg = `십모형이 ${p.q / 10}개네!\n10이 ${p.q / 10}개인 수를 두 가지 방법으로 찾아보자.`;
+                        }
+                    } else if (p.phase === 2) {
+                        const tensOk = drops[0] === p.ans[0];
+                        const unitsOk = drops[1] === p.ans[1];
+                        const n = parseInt(Object.keys(NUM_WORDS).find(key => NUM_WORDS[key].k + K_UNITS[key % 10] === p.q) || 0);
+                        if (tensOk && !unitsOk) {
+                            msg = `십의 자리 '${drops[0]}'은 잘 썼어!\n낱개가 ${p.ans[1]}개니까 일의 자리를 다시 확인해볼까?`;
+                        } else if (!tensOk && unitsOk) {
+                            msg = `일의 자리 '${drops[1]}'은 잘 썼어!\n십모형이 ${p.ans[0]}개니까 십의 자리를 다시 확인해볼까?`;
+                        } else {
+                            msg = p.hint;
+                        }
+                    } else if (p.phase === 3) {
+                        const tensOk = drops[0] === p.ans[0];
+                        const unitsOk = drops[1] === p.ans[1];
+                        if (tensOk && !unitsOk) {
+                            msg = `십의 자리 '${drops[0]}'은 잘 찾았어!\n낱개가 ${p.q % 10}개일 때 어떻게 읽는지 다시 생각해볼까?`;
+                        } else if (!tensOk && unitsOk) {
+                            msg = `일의 자리 '${drops[1]}'은 잘 찾았어!\n십모형이 ${Math.floor(p.q / 10)}개일 때 어떻게 읽는지 다시 생각해볼까?`;
+                        } else {
+                            msg = p.hint;
+                        }
+                    }
                     if (!reviewMode && !wrong.find(w => w.id === p.id)) setWrong(pr => [...pr, p]);
-                    setFeedback({ type: 'wrong', msg: p.hint });
+                    setFeedback({ type: 'wrong', msg: msg || p.hint });
                     speak('다시 한번 생각해볼까?', muted);
                 }
             };
@@ -858,11 +912,11 @@
 
             /* ── INTRO ── */
             if (step === 'intro') return (
-                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 40, padding: 32, textAlign: 'center' }}>
+                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 40, padding: 32, textAlign: 'center' }}>
                     <div className="float-anim" style={{ fontSize: 140 }}>🧭</div>
                     <h1 style={{ fontSize: 80, fontWeight: 900, color: '#166534', letterSpacing: -2 }}>'100까지의 수' 모험</h1>
-                    <div style={{ background: 'white', border: '6px dashed #bbf7d0', padding: '32px 48px', borderRadius: 48, maxWidth: 600 }}>
-                        <p style={{ fontSize: 32, color: '#475569', fontWeight: 700, lineHeight: 1.6 }}>나침반을 따라가며 카드를 선택해<br />숫자 마법을 완성하세요!</p>
+                    <div style={{ background: 'white', border: '6px dashed #bbf7d0', padding: '40px 64px', borderRadius: 48, maxWidth: 800 }}>
+                        <p style={{ fontSize: 44, color: '#475569', fontWeight: 700, lineHeight: 1.6 }}>여러 가지 방법으로 수를 읽고 써보며<br />즐거운 숫자 모험을 떠나볼까요?</p>
                     </div>
                     <button className="main-btn" onClick={() => setStep('micPermission')}
                         style={{ padding: '24px 80px', background: '#22c55e', color: 'white', borderRadius: 999, fontSize: 36, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 12px 32px rgba(34,197,94,0.4)' }}>
@@ -873,7 +927,7 @@
 
             /* ── MIC PERMISSION ── */
             if (step === 'micPermission') return (
-                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: 32, padding: 32, textAlign: 'center', background: '#F4FAF6' }}>
+                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 32, padding: 32, textAlign: 'center', background: '#F4FAF6' }}>
                     <div className="float-anim" style={{ fontSize: 120 }}>🎙️</div>
                     <h2 style={{ fontSize: 56, fontWeight: 900, color: '#166534' }}>마이크 허용이 필요해요!</h2>
                     <div style={{ background: 'white', border: '6px solid #bbf7d0', padding: '32px 48px', borderRadius: 48, maxWidth: 640, boxShadow: '0 10px 30px rgba(0,0,0,0.06)' }}>
@@ -903,7 +957,7 @@
 
             /* ── LOGIN (Student Select) ── */
             if (step === 'login') return (
-                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', width: '100vw', background: '#F4FAF6', padding: '40px 20px' }}>
+                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%', background: '#F4FAF6', padding: '40px 20px' }}>
                     <h2 style={{ fontSize: 40, fontWeight: 900, color: '#166534', marginBottom: 24 }}>누구인가요? 🧑🎓</h2>
 
                     {isLoading ? (
@@ -967,7 +1021,7 @@
 
             /* ── MAP ── */
             if (step === 'map') return (
-                <div className="fade-in" style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px', gap: '20px', background: '#F4FAF6' }}>
+                <div className="fade-in" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px', gap: '20px', background: '#F4FAF6' }}>
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <button onClick={() => setStep('login')} style={{ fontSize: 20, background: 'white', border: '1px solid #bbf7d0', padding: '10px 20px', borderRadius: 12, cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
                             ◀ 이름 바꾸기
@@ -1050,7 +1104,7 @@
 
             /* ── PLAY (4단계: 소리로 읽기) ── */
             if (step === 'play' && p && phase === 4) return (
-                <div className="fade-in" style={{ width: '100vw', height: '100vh', background: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div className="fade-in" style={{ width: '100%', height: '100%', background: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     {/* 상단 헤더 */}
                     <div style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 16, borderBottom: '1px solid #f0fdf4', background: '#f0fdf4', flexShrink: 0 }}>
                         <button onClick={() => setStep('map')} style={{ padding: '8px 14px', background: 'white', border: '1px solid #bbf7d0', borderRadius: 12, cursor: 'pointer', fontSize: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>🏠</button>
@@ -1065,47 +1119,21 @@
                                 <div className="progress-bar" style={{ height: '100%', background: '#4ade80', borderRadius: 999, width: `${((probIdx + 1) / problems.length) * 100}%` }} />
                             </div>
                         </div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: '#166534', background: 'white', padding: '6px 14px', borderRadius: 12, border: '2px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>👤</span>
+                            <span>{currentUser?.name}</span>
+                        </div>
                         <button onClick={() => setMuted(!muted)} style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer' }}>{muted ? '🔇' : '🔊'}</button>
                     </div>
 
                     {/* 메인 콘텐츠 */}
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 40px', gap: 20, overflowY: 'auto' }}>
-                        {/* 수 모형 + 숫자 카드 + 힌트 버튼 */}
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 40px', gap: 20, overflow: 'hidden' }}>
+                        {/* 수 모형 + 숫자 카드 */}
                         <div style={{ background: '#f0fdf4', border: '6px solid #4ade80', borderRadius: 48, padding: '20px 40px', width: '100%', maxWidth: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40, boxShadow: '0 10px 30px rgba(0,0,0,0.05)', flexWrap: 'wrap', position: 'relative' }}>
                             <BlocksDisplay value={p.q} />
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                                 <div style={{ fontSize: 16, fontWeight: 700, color: '#64748b' }}>숫자</div>
                                 <div style={{ fontSize: 120, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>{p.q}</div>
-
-                                {/* 한자어 빈칸 / 정답 표시 영역 */}
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: 44, fontWeight: 900, color: '#db2777', marginTop: 16, background: 'white', padding: '16px 32px', borderRadius: 32, boxShadow: '0 4px 16px rgba(219,39,119,0.1)' }}>
-                                    {Math.floor(p.q / 10) > 1 && (
-                                        <>
-                                            <div style={{
-                                                minWidth: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                borderRadius: 20, border: voiceStep === 'sino' ? '4px dashed #f472b6' : '4px solid #f472b6',
-                                                background: voiceStep === 'sino' ? '#fdf2f8' : '#fce7f3',
-                                                color: voiceStep === 'sino' ? 'transparent' : '#be185d',
-                                                padding: '0 10px'
-                                            }}>
-                                                {voiceStep === 'sino' ? '?' : S_UNITS[Math.floor(p.q / 10)]}
-                                            </div>
-                                            <div style={{ fontSize: 40 }}>십</div>
-                                        </>
-                                    )}
-                                    {Math.floor(p.q / 10) === 1 && <div style={{ fontSize: 40 }}>십</div>}
-                                    {p.q % 10 > 0 && (
-                                        <div style={{
-                                            minWidth: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            borderRadius: 20, border: voiceStep === 'sino' ? '4px dashed #f472b6' : '4px solid #f472b6',
-                                            background: voiceStep === 'sino' ? '#fdf2f8' : '#fce7f3',
-                                            color: voiceStep === 'sino' ? 'transparent' : '#be185d',
-                                            padding: '0 10px'
-                                        }}>
-                                            {voiceStep === 'sino' ? '?' : S_UNITS[p.q % 10]}
-                                        </div>
-                                    )}
-                                </div>
                             </div>
                             {/* 힌트 버튼 */}
                             {!voiceResult && (
@@ -1170,69 +1198,118 @@
 
                         {/* 안내 문구 */}
                         {!voiceResult && (
-                            <p style={{ fontSize: 28, fontWeight: 900, color: '#15803d', textAlign: 'center', margin: 0 }}>
+                            <p style={{ fontSize: 40, fontWeight: 900, color: '#15803d', textAlign: 'center', margin: '12px 0' }}>
                                 {voiceStep === 'sino' ? (
-                                    <>한자어로 소리 내어 읽어보세요! 🗣️ <span style={{ fontSize: 20, color: '#64748b' }}>(예: 칠십구)</span></>
+                                    <>첫 번째 방법으로 소리 내어 읽어보세요! 🗣️ <span style={{ fontSize: 26, color: '#64748b' }}>(예: 칠십구)</span></>
                                 ) : (
-                                    <>이제 우리말로 소리 내어 바꿔보세요! 🗣️ <span style={{ fontSize: 20, color: '#64748b' }}>(예: 일흔아홉)</span></>
+                                    <>두 번째 방법으로 소리 내어 읽어보세요! 🗣️ <span style={{ fontSize: 26, color: '#64748b' }}>(예: 일흔아홉)</span></>
                                 )}
                             </p>
                         )}
 
-                        {/* 녹음 영역 */}
-                        <div style={{ width: '100%', maxWidth: 860, background: '#f8fafc', borderRadius: 40, border: '4px dashed #bbf7d0', padding: '28px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+                        {/* 녹음 영역 - 두 칸으로 분리 */}
+                        <div style={{ width: '100%', maxWidth: 900, display: 'flex', gap: 20 }}>
+                            {/* 첫 번째 읽기 */}
+                            <div style={{
+                                flex: 1, background: voiceStep === 'native' && !voiceResult ? '#f0fdf4' : '#f8fafc',
+                                borderRadius: 32, border: `4px dashed ${voiceStep === 'native' && voiceResult !== 'correct' ? '#bbf7d0' : '#bbf7d0'}`,
+                                padding: '20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+                                opacity: voiceStep === 'native' ? 0.85 : 1,
+                                position: 'relative'
+                            }}>
+                                <div style={{ fontSize: 30, fontWeight: 900, color: '#3b82f6' }}>읽기 ① <span style={{ fontSize: 22, color: '#64748b', fontWeight: 700 }}>(예: 십일)</span></div>
+                                {/* 완료 표시 */}
+                                {voiceStep === 'native' && (
+                                    <div style={{ position: 'absolute', top: 16, right: 16, fontSize: 32 }}>✅</div>
+                                )}
+                                {/* 녹음 버튼 */}
+                                {voiceStep === 'sino' && !voiceResult && (
+                                    <button
+                                        onClick={startRecording}
+                                        disabled={isRecording}
+                                        style={{
+                                            padding: '18px 48px',
+                                            background: isRecording ? '#ef4444' : '#22c55e',
+                                            color: 'white', borderRadius: 999, fontSize: 28, fontWeight: 900,
+                                            border: 'none', cursor: isRecording ? 'not-allowed' : 'pointer',
+                                            boxShadow: isRecording ? '0 0 30px rgba(239,68,68,0.4)' : '0 12px 32px rgba(34,197,94,0.35)',
+                                            display: 'flex', alignItems: 'center', gap: 12,
+                                            animation: isRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
+                                        }}
+                                    >
+                                        {isRecording ? <><span>🔴</span><span>듣고 있어요...</span></> : <><span>🎙️</span><span>녹음하기</span></>}
+                                    </button>
+                                )}
+                                {voiceStep === 'sino' && isRecording && (
+                                    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 40 }}>
+                                        {[0.4,0.8,1,0.6,0.9,0.5,0.7,0.3,0.8,0.5,0.7,0.4].map((h, i) => (
+                                            <div key={i} style={{ width: 8, background: '#ef4444', borderRadius: 5, height: `${h * 100}%`, animation: `soundWave 0.7s ease-in-out infinite`, animationDelay: `${i * 0.07}s` }} />
+                                        ))}
+                                    </div>
+                                )}
+                                {voiceStep === 'sino' && isRecording && (
+                                    <div style={{ minHeight: 60, width: '100%', background: 'white', border: '3px solid #fca5a5', borderRadius: 24, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <span style={{ fontSize: interimTranscript ? 36 : 22, fontWeight: 900, color: interimTranscript ? '#dc2626' : '#cbd5e1' }}>
+                                            {interimTranscript || '말해보세요...'}
+                                        </span>
+                                    </div>
+                                )}
+                                {/* 완료 후 결과 */}
+                                {voiceStep === 'native' && (
+                                    <div style={{ fontSize: 40, fontWeight: 900, color: '#2563eb' }}>{p.sinoReading}</div>
+                                )}
+                            </div>
 
-                            {/* 녹음 버튼 (결과가 없을 때만) */}
-                            {!voiceResult && (
-                                <button
-                                    onClick={startRecording}
-                                    disabled={isRecording}
-                                    style={{
-                                        padding: '22px 64px',
-                                        background: isRecording ? '#ef4444' : '#22c55e',
-                                        color: 'white', borderRadius: 999, fontSize: 32, fontWeight: 900,
-                                        border: 'none', cursor: isRecording ? 'not-allowed' : 'pointer',
-                                        boxShadow: isRecording ? '0 0 30px rgba(239,68,68,0.4)' : '0 12px 32px rgba(34,197,94,0.35)',
-                                        display: 'flex', alignItems: 'center', gap: 16,
-                                        animation: isRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
-                                    }}
-                                >
-                                    {isRecording ? <><span>🔴</span><span>듣고 있어요...</span></> : <><span>🎙️</span><span>녹음하기</span></>}
-                                </button>
-                            )}
-
-                            {/* 음파 애니메이션 */}
-                            {isRecording && (
-                                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 50 }}>
-                                    {[0.4, 0.8, 1, 0.6, 0.9, 0.5, 0.7, 0.3, 0.8, 0.5, 0.7, 0.4].map((h, i) => (
-                                        <div key={i} style={{ width: 10, background: '#ef4444', borderRadius: 5, height: `${h * 100}%`, animation: `soundWave 0.7s ease-in-out infinite`, animationDelay: `${i * 0.07}s` }} />
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* 실시간 음성 표시 */}
-                            {isRecording && (
-                                <div style={{
-                                    minHeight: 72, width: '100%', maxWidth: 600,
-                                    background: 'white',
-                                    border: '3px solid #fca5a5',
-                                    borderRadius: 28,
-                                    padding: '14px 28px',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    boxShadow: '0 4px 16px rgba(239,68,68,0.1)',
-                                    transition: 'all 0.2s'
-                                }}>
-                                    <span style={{
-                                        fontSize: interimTranscript ? 40 : 24,
-                                        fontWeight: 900,
-                                        color: interimTranscript ? '#dc2626' : '#cbd5e1',
-                                        letterSpacing: 2,
-                                        transition: 'all 0.15s'
-                                    }}>
-                                        {interimTranscript || '말해보세요...'}
-                                    </span>
-                                </div>
-                            )}
+                            {/* 두 번째 읽기 */}
+                            <div style={{
+                                flex: 1, background: '#f8fafc',
+                                borderRadius: 32, border: '4px dashed #bbf7d0',
+                                padding: '20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+                                opacity: voiceStep === 'sino' ? 0.5 : 1,
+                                position: 'relative'
+                            }}>
+                                <div style={{ fontSize: 30, fontWeight: 900, color: '#ec4899' }}>읽기 ② <span style={{ fontSize: 22, color: '#64748b', fontWeight: 700 }}>(예: 열하나)</span></div>
+                                {/* 잠금 표시 (첫 번째 안 끝났을 때) */}
+                                {voiceStep === 'sino' && (
+                                    <div style={{ fontSize: 48, marginTop: 8 }}>🔒</div>
+                                )}
+                                {/* 녹음 버튼 */}
+                                {voiceStep === 'native' && !voiceResult && (
+                                    <button
+                                        onClick={startRecording}
+                                        disabled={isRecording}
+                                        style={{
+                                            padding: '18px 48px',
+                                            background: isRecording ? '#ef4444' : '#22c55e',
+                                            color: 'white', borderRadius: 999, fontSize: 28, fontWeight: 900,
+                                            border: 'none', cursor: isRecording ? 'not-allowed' : 'pointer',
+                                            boxShadow: isRecording ? '0 0 30px rgba(239,68,68,0.4)' : '0 12px 32px rgba(34,197,94,0.35)',
+                                            display: 'flex', alignItems: 'center', gap: 12,
+                                            animation: isRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
+                                        }}
+                                    >
+                                        {isRecording ? <><span>🔴</span><span>듣고 있어요...</span></> : <><span>🎙️</span><span>녹음하기</span></>}
+                                    </button>
+                                )}
+                                {voiceStep === 'native' && isRecording && (
+                                    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 40 }}>
+                                        {[0.4,0.8,1,0.6,0.9,0.5,0.7,0.3,0.8,0.5,0.7,0.4].map((h, i) => (
+                                            <div key={i} style={{ width: 8, background: '#ef4444', borderRadius: 5, height: `${h * 100}%`, animation: `soundWave 0.7s ease-in-out infinite`, animationDelay: `${i * 0.07}s` }} />
+                                        ))}
+                                    </div>
+                                )}
+                                {voiceStep === 'native' && isRecording && (
+                                    <div style={{ minHeight: 60, width: '100%', background: 'white', border: '3px solid #fca5a5', borderRadius: 24, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <span style={{ fontSize: interimTranscript ? 36 : 22, fontWeight: 900, color: interimTranscript ? '#dc2626' : '#cbd5e1' }}>
+                                            {interimTranscript || '말해보세요...'}
+                                        </span>
+                                    </div>
+                                )}
+                                {/* 두 번째도 완료 */}
+                                {voiceStep === 'native' && voiceResult === 'correct' && (
+                                    <div style={{ fontSize: 32, marginTop: 4 }}>✅</div>
+                                )}
+                            </div>
                         </div>
 
                         {/* 결과 표시 (팝업으로 변경) */}
@@ -1243,7 +1320,7 @@
                                     border: `8px solid ${voiceResult === 'correct' ? '#4ade80' : '#fca5a5'}`,
                                     boxShadow: '0 30px 80px rgba(0,0,0,0.25)',
                                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
-                                    maxWidth: 700, width: '90%'
+                                    maxWidth: 1000, width: '90%'
                                 }}>
                                     {/* 비교 박스 */}
                                     <div style={{
@@ -1253,18 +1330,18 @@
                                         width: '100%', flexWrap: 'wrap'
                                     }}>
                                         <div style={{ textAlign: 'center' }}>
-                                            <div style={{ fontSize: 16, color: '#64748b', marginBottom: 8, fontWeight: 700 }}>내가 말한 것</div>
-                                            <div style={{ fontSize: 56, fontWeight: 900, color: '#334155' }}>{transcript}</div>
+                                            <div style={{ fontSize: 22, color: '#64748b', marginBottom: 8, fontWeight: 700 }}>내가 말한 것</div>
+                                            <div style={{ fontSize: 72, fontWeight: 900, color: '#334155' }}>{transcript}</div>
                                         </div>
                                         <div style={{ fontSize: 48, fontWeight: 900, color: voiceResult === 'correct' ? '#16a34a' : '#ef4444' }}>
                                             {voiceResult === 'correct' ? '=' : '≠'}
                                         </div>
                                         <div style={{ textAlign: 'center' }}>
-                                            <div style={{ fontSize: 16, color: '#64748b', marginBottom: 8, fontWeight: 700 }}>정답</div>
-                                            <div style={{ fontSize: 56, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>
+                                            <div style={{ fontSize: 22, color: '#64748b', marginBottom: 8, fontWeight: 700 }}>정답</div>
+                                            <div style={{ fontSize: 72, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>
                                                 {voiceResult === 'correct' ? (voiceStep === 'sino' ? p.sinoReading : p.nativeReading) : '???'}
+                                                <span style={{ fontSize: 36, color: '#94a3b8', fontWeight: 700, marginLeft: 12 }}>({p.q})</span>
                                             </div>
-                                            <div style={{ fontSize: 20, color: '#94a3b8', marginTop: 8 }}>({p.q})</div>
                                         </div>
                                     </div>
 
@@ -1277,17 +1354,18 @@
                                         color: voiceResult === 'correct' ? '#166534' : '#dc2626'
                                     }}>
                                         {voiceResult === 'correct' ? (
-                                            voiceStep === 'sino' ? '🌟 한자어로 잘 읽었어요!' : '🌟 우리말도 완벽해요!'
+                                            voiceStep === 'sino' ? '🌟 잘 읽었어요!' : '🌟 완벽해요!'
                                         ) : (
                                             <span>
                                                 {transcript && transcript.length < 15 ? (
-                                                    <><span style={{ color: '#64748b', fontSize: 24 }}>학생은 '<b style={{ color: '#dc2626' }}>{transcript}</b>'(이)라고 읽었네요!</span><br /></>
+                                                    <><span style={{ color: '#64748b', fontSize: 32 }}>학생은 '<b style={{ color: '#dc2626' }}>{transcript}</b>'(이)라고 읽었네요!</span><br /></>
                                                 ) : null}
-                                                <span style={{ fontSize: 24, color: '#475569', lineHeight: 1.5, display: 'block', marginTop: 8 }}>
+                                                <span style={{ fontSize: 36, color: '#475569', lineHeight: 1.5, display: 'block', marginTop: 12 }}>
                                                     {(() => {
                                                         const tens = Math.floor(p.q / 10);
                                                         const units = p.q % 10;
                                                         const isSino = voiceStep === 'sino';
+                                                        const highlightStyle = { background: 'linear-gradient(180deg,transparent 65%,#fde68a 0)', padding: '0 4px', fontWeight: 900, color: '#1e293b' };
                                                         
                                                         // 정답의 각 자리 읽기
                                                         const tTens = isSino ? (tens === 1 ? '십' : S_ORDER[tens-1] + '십') : K_ORDER[tens-1];
@@ -1299,16 +1377,16 @@
 
                                                         if (tensMatch && !unitsMatch) {
                                                             return isSino 
-                                                                ? `십의 자리 '${tens}0'을(를) '${tTens}'(으)로 아주 잘 읽었어요! 일의 자리 '${units}'(낱개)은 어떻게 읽어야 할까요?`
-                                                                : `십의 자리 '${tens === 1 ? '십' : S_ORDER[tens-1] + '십'}'을(를) '${tTens}'(으)로 정확하게 바꿨어요! 일의 자리 '${units}'(낱개)은 우리말로 무엇일까요?`;
+                                                                ? <>{'십의 자리 '}<span style={highlightStyle}>{`'${tens}0'`}</span>{'을(를) '}<span style={highlightStyle}>{`'${tTens}'`}</span>{'(으)로 아주 잘 읽었어요!'}<br />{'일의 자리 '}<span style={highlightStyle}>{`'${units}'`}</span>{'(낱개)은 어떻게 읽어야 할까요?'}</>
+                                                                : <>{'십의 자리 '}<span style={highlightStyle}>{`'${tens === 1 ? '십' : S_ORDER[tens-1] + '십'}'`}</span>{'을(를) '}<span style={highlightStyle}>{`'${tTens}'`}</span>{'(으)로 정확하게 바꿨어요!'}<br />{'일의 자리 '}<span style={highlightStyle}>{`'${units}'`}</span>{'(낱개)은 우리말로 무엇일까요?'}</>;
                                                         } else if (!tensMatch && unitsMatch && tens > 0) {
                                                             return isSino
-                                                                ? `일의 자리 '${units}'을(를) '${tUnits}'(으)로 잘 읽었어요! 십의 자리 '${tens}0'은 어떻게 읽어야 할까요?`
-                                                                : `일의 자리 '${S_UNITS[units]}'(을)를 '${tUnits}'(으)로 잘 읽었어요! 십의 자리 '${tens === 1 ? '십' : S_ORDER[tens-1] + '십'}'은 우리말로 무엇일까요?`;
+                                                                ? <>{'일의 자리 '}<span style={highlightStyle}>{`'${units}'`}</span>{'을(를) '}<span style={highlightStyle}>{`'${tUnits}'`}</span>{'(으)로 잘 읽었어요!'}<br />{'십의 자리 '}<span style={highlightStyle}>{`'${tens}0'`}</span>{'은 어떻게 읽어야 할까요?'}</>
+                                                                : <>{'일의 자리 '}<span style={highlightStyle}>{`'${S_UNITS[units]}'`}</span>{'을(를) '}<span style={highlightStyle}>{`'${tUnits}'`}</span>{'(으)로 잘 읽었어요!'}<br />{'십의 자리 '}<span style={highlightStyle}>{`'${tens === 1 ? '십' : S_ORDER[tens-1] + '십'}'`}</span>{'은 우리말로 무엇일까요?'}</>;
                                                         } else {
                                                             return isSino
-                                                                ? `수 모형을 다시 볼까요? 십 모형은 ${tens}개, 낱개는 ${units}개예요. 천천히 다시 읽어보세요.`
-                                                                : `한자어 '${p.sinoReading}'을(를) 우리말로 바꿔보세요. 십의 자리는 '${K_ORDER[tens-1]}...', 일의 자리는 '${K_UNITS[units]}...' 중 무엇일까요?`;
+                                                                ? <>{'수 모형을 다시 볼까요?'}<br />{'십 모형은 '}<span style={highlightStyle}>{`${tens}개`}</span>{', 낱개는 '}<span style={highlightStyle}>{`${units}개`}</span>{'예요.'}<br />{'천천히 다시 읽어보세요.'}</>
+                                                                : <>{'첫 번째 방법 '}<span style={highlightStyle}>{`'${p.sinoReading}'`}</span>{'을(를)'}<br />{'두 번째 방법으로 바꿔보세요.'}<br />{'십의 자리는 '}<span style={highlightStyle}>{`'${K_ORDER[tens-1]}...'`}</span>{', 일의 자리는 '}<span style={highlightStyle}>{`'${K_UNITS[units]}...'`}</span>{' 중 무엇일까요?'}</>;
                                                         }
                                                     })()}
                                                 </span>
@@ -1335,7 +1413,7 @@
                                                 setVoiceResult(null);
                                                 setVoiceStep('native');
                                             }} className="main-btn" style={{ flex: 1, padding: '20px', background: '#3b82f6', color: 'white', borderRadius: 24, fontSize: 28, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(59,130,246,0.3)' }}>
-                                                우리말로 바꾸기 ▶
+                                                다르게 읽기 ▶
                                             </button>
                                         )}
                                         {voiceResult === 'correct' && voiceStep === 'native' && (
@@ -1355,10 +1433,22 @@
                             <div className="stamp-in" style={{ background: 'white', padding: '48px 64px', borderRadius: 64, boxShadow: '0 40px 100px rgba(0,0,0,0.2)', border: '12px solid #a7f3d0', textAlign: 'center', maxWidth: 700, width: '90%' }}>
                                 <div style={{ fontSize: 80, marginBottom: 12 }}>🎙️</div>
                                 <h2 style={{ fontSize: 44, fontWeight: 900, color: '#166534', marginBottom: 16 }}>소리로 읽기 완료!</h2>
-                                <p style={{ fontSize: 26, color: '#475569', marginBottom: 32, lineHeight: 1.6 }}>
-                                    수를 멋지게 읽었어요!<br />
-                                    선생님께서 기록을 확인하실 수 있어요 😊
-                                </p>
+                                <div style={{ background: '#f0fdf4', borderRadius: 32, padding: '32px', margin: '24px 0 40px', border: '4px solid #bbf7d0' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'center', gap: 60, alignItems: 'center' }}>
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: 20, color: '#166534', fontWeight: 700, marginBottom: 8 }}>전체 문제</div>
+                                            <div style={{ fontSize: 52, fontWeight: 900, color: '#166534', lineHeight: 1 }}>{problems.length}<span style={{ fontSize: 24 }}>개</span></div>
+                                        </div>
+                                        <div style={{ width: 4, height: 60, background: '#bbf7d0', borderRadius: 2 }} />
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: 20, color: '#64748b', fontWeight: 700, marginBottom: 8 }}>한 번에 읽기</div>
+                                            <div style={{ fontSize: 52, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>{problems.length - (wrong.length)}<span style={{ fontSize: 24 }}>개</span></div>
+                                        </div>
+                                    </div>
+                                    <div style={{ marginTop: 24, fontSize: 24, color: '#166534', fontWeight: 900 }}>
+                                        {wrong.length === 0 ? '✨ 모든 문제를 한 번에 완벽하게 읽었어요! ✨' : '멋져요! 포기하지 않고 끝까지 읽어냈네요! 👍'}
+                                    </div>
+                                </div>
                                 <div style={{ display: 'flex', gap: 16 }}>
                                     {wrong.length > 0 && (
                                         <button className="confirm-btn" onClick={() => { setReviewMode(true); setStamp(false); setProbIdx(0); setSessionId(Date.now().toString()); }}
@@ -1366,8 +1456,17 @@
                                             🔄 다시 읽어보기
                                         </button>
                                     )}
-                                    <button className="confirm-btn" onClick={() => { setStep('map'); setStamp(false); }}
-                                        style={{ flex: 1, padding: '18px', background: '#22c55e', color: 'white', borderRadius: 24, fontSize: 24, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 24px rgba(34,197,94,0.4)' }}>
+                                    <button className="confirm-btn" 
+                                        disabled={wrong.length > 0}
+                                        onClick={() => { setStep('map'); setStamp(false); }}
+                                        style={{ 
+                                            flex: 1, padding: '18px', 
+                                            background: wrong.length > 0 ? '#cbd5e1' : '#22c55e', 
+                                            color: 'white', borderRadius: 24, fontSize: 24, fontWeight: 900, border: 'none', 
+                                            cursor: wrong.length > 0 ? 'not-allowed' : 'pointer', 
+                                            boxShadow: wrong.length > 0 ? 'none' : '0 8px 24px rgba(34,197,94,0.4)',
+                                            opacity: wrong.length > 0 ? 0.6 : 1
+                                        }}>
                                         지도로 돌아가기 🗺️
                                     </button>
                                 </div>
@@ -1379,7 +1478,7 @@
 
             /* ── PLAY (1~3단계: 카드 선택) ── */
             if (step === 'play' && p) return (
-                <div className="fade-in" style={{ width: '100vw', height: '100vh', background: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div className="fade-in" style={{ width: '100%', height: '100%', background: 'white', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <div style={{ padding: '10px 24px', display: 'flex', alignItems: 'center', gap: 16, borderBottom: '1px solid #f0fdf4', background: '#f0fdf4', flexShrink: 0 }}>
                         <button onClick={() => setStep('map')}
                             style={{ padding: '8px 14px', background: 'white', border: '1px solid #bbf7d0', borderRadius: 12, cursor: 'pointer', fontSize: 18, boxShadow: '0 1px 4px rgba(0,0,0,0.07)' }}>🏠</button>
@@ -1397,153 +1496,201 @@
                                 <div className="progress-bar" style={{ height: '100%', background: reviewMode ? '#fb923c' : '#4ade80', borderRadius: 999, width: `${((probIdx + 1) / problems.length) * 100}%` }} />
                             </div>
                         </div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: '#166534', background: 'white', padding: '6px 14px', borderRadius: 12, border: '2px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span>👤</span>
+                            <span>{currentUser?.name}</span>
+                        </div>
                         <button onClick={() => setMuted(!muted)}
                             style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer' }}>{muted ? '🔇' : '🔊'}</button>
                     </div>
 
-                    <div style={{ padding: '16px 48px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, minHeight: 250 }}>
-                        {/* 문제 표시 (가로 꽉 차게) */}
-                        <div style={{ width: '100%', maxWidth: 1200, background: '#f0fdf4', border: '6px solid #4ade80', borderRadius: 60, padding: '24px 40px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
-                            {p.type === 'bundle' || p.type === 'read' ? (
+                    <div style={{ padding: '8px 12px', display: 'flex', alignItems: 'stretch', justifyContent: 'center', flexShrink: 0, height: 340, gap: 16 }}>
+                        {/* 문제 표시 */}
+                        <div style={{ flex: 1, background: '#f0fdf4', border: '6px solid #4ade80', borderRadius: 60, padding: '24px 40px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+                            {phase === 3 || p.type === 'bundle' ? (
                                 <BlocksDisplay value={p.q} />
                             ) : (
-                                <div style={{ fontSize: 200, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>{p.q}</div>
+                                <div style={{ fontSize: phase === 2 ? 180 : 200, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>
+                                    {p.q}
+                                </div>
                             )}
                         </div>
-                    </div>
 
-                    <div style={{ margin: '0 32px 32px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <div style={{ textAlign: 'center', fontWeight: 900, color: '#15803d', fontSize: 32 }}>알맞은 카드를 선택하세요!</div>
-                        <div style={{ display: 'flex', gap: 24, flex: 1, minHeight: 0, flexDirection: 'row-reverse' }}>
-                            <div style={{ width: 440, background: 'white', borderRadius: 48, border: '6px solid #fde68a', padding: '24px 22px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24, boxShadow: '0 10px 30px rgba(0,0,0,0.05)', flexShrink: 0, justifyContent: 'center' }}>
-                                <div style={{ display: 'flex', gap: phase === 1 ? 12 : 20, alignItems: 'center', flexDirection: phase === 1 ? 'column' : 'row' }}>
-                                    {p.ans.map((_, idx) => (
-                                        <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                                            {(phase === 2 || phase === 3) && (
-                                                <div style={{
-                                                    fontSize: 18, fontWeight: 900,
-                                                    color: idx === 0 ? '#6b21a8' : '#854d0e',
-                                                    background: idx === 0 ? '#f3e8ff' : '#fff7ed',
-                                                    padding: '4px 14px', borderRadius: 12,
-                                                    border: `2px solid ${idx === 0 ? '#d8b4fe' : '#fed7aa'}`,
-                                                    marginBottom: 4
-                                                }}>
-                                                    {idx === 0 ? '십의 자리' : '일의 자리'}
+                        {/* 2, 3단계 전용 정답란 & 버튼 (옆으로 이동) */}
+                        {(phase === 2 || phase === 3) && (
+                            <>
+                                <div style={{ width: 360, display: 'flex', flexDirection: 'column' }}>
+                                    <div style={{ background: 'white', borderRadius: 32, border: '6px solid #fde68a', padding: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', flex: 1 }}>
+                                        <div style={{ display: 'flex', flexDirection: 'row', gap: 20 }}>
+                                            {p.ans.map((_, idx) => (
+                                                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                                                    <div style={{
+                                                        fontSize: 16, fontWeight: 900,
+                                                        color: idx === 0 ? '#6b21a8' : '#854d0e',
+                                                        background: idx === 0 ? '#f3e8ff' : '#fff7ed',
+                                                        padding: '2px 10px', borderRadius: 8,
+                                                        border: `1px solid ${idx === 0 ? '#d8b4fe' : '#fed7aa'}`,
+                                                    }}>
+                                                        {idx === 0 ? '십의 자리' : '일의 자리'}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => clearDrop(idx)}
+                                                        style={{
+                                                            width: 110, height: 100, borderRadius: 20,
+                                                            border: `4px dashed ${idx === 0 ? '#d8b4fe' : '#fed7aa'}`,
+                                                            background: 'white',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            fontSize: 60, fontWeight: 900,
+                                                            color: '#1e293b',
+                                                            boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.05)',
+                                                            cursor: drops[idx] ? 'pointer' : 'default',
+                                                            transition: 'all 0.15s',
+                                                            position: 'relative',
+                                                            boxSizing: 'border-box'
+                                                        }}>
+                                                        <span style={{ fontSize: 44 }}>{drops[idx] || ''}</span>
+                                                    </button>
                                                 </div>
-                                            )}
-                                            <button
-                                                onClick={() => clearDrop(idx)}
-                                                style={{
-                                                    width: phase === 1 ? 160 : 120, height: phase === 1 ? 85 : 120, borderRadius: 30,
-                                                    border: `5px dashed ${drops[idx] ? '#4ade80' : (
-                                                        phase === 1 ? (idx === 0 ? '#bfdbfe' : '#fbcfe8') :
-                                                            (phase === 2 || phase === 3) ? (idx === 0 ? '#d8b4fe' : '#fdba74') :
-                                                                '#cbd5e1'
-                                                    )}`,
-                                                    background: drops[idx] ? 'white' : (
-                                                        phase === 1 ? (idx === 0 ? '#eff6ff' : '#fff1f2') :
-                                                            (phase === 2 || phase === 3) ? (idx === 0 ? '#faf5ff' : '#fff7ed') :
-                                                                '#f8fafc'
-                                                    ),
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: 48, fontWeight: 900,
-                                                    color: drops[idx] ? '#16a34a' : 'transparent',
-                                                    boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.05)',
-                                                    cursor: drops[idx] ? 'pointer' : 'default',
-                                                    transition: 'all 0.15s',
-                                                    position: 'relative'
-                                                }}>
-                                                {drops[idx] || ''}
-                                            </button>
+                                            ))}
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: 12, width: '100%' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, justifyContent: 'center', width: 140 }}>
                                     <button
                                         onClick={() => setDrops(new Array(p.ans.length).fill(null))}
                                         className="main-btn"
-                                        style={{
-                                            flex: 1,
-                                            padding: '16px 0',
-                                            background: '#e11d48',
-                                            color: 'white',
-                                            borderRadius: 20,
-                                            fontSize: 22,
-                                            fontWeight: 900,
-                                            border: 'none',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 8px 20px rgba(225,29,72,0.3)'
-                                        }}
-                                    >
-                                        수정하기 ↩
+                                        style={{ padding: '16px 0', background: '#e11d48', color: 'white', borderRadius: 16, fontSize: 20, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(225,29,72,0.3)' }}>
+                                        수정 ↩
                                     </button>
                                     <button
                                         className="main-btn"
                                         onClick={checkAnswer}
-                                        style={{
-                                            flex: 1,
-                                            padding: '16px 0',
-                                            background: drops.includes(null) ? '#cbd5e1' : '#22c55e',
-                                            color: 'white',
-                                            borderRadius: 20,
-                                            fontSize: 22,
-                                            fontWeight: 900,
-                                            border: 'none',
-                                            cursor: drops.includes(null) ? 'not-allowed' : 'pointer',
-                                            boxShadow: drops.includes(null) ? 'none' : '0 8px 20px rgba(34,197,94,0.3)'
-                                        }}
-                                    >
-                                        정답 확인 ✅
+                                        disabled={drops.includes(null)}
+                                        style={{ padding: '16px 0', background: drops.includes(null) ? '#cbd5e1' : '#22c55e', color: 'white', borderRadius: 16, fontSize: 20, fontWeight: 900, border: 'none', cursor: drops.includes(null) ? 'not-allowed' : 'pointer', boxShadow: drops.includes(null) ? 'none' : '0 8px 20px rgba(34,197,94,0.3)' }}>
+                                        정답 ✅
                                     </button>
                                 </div>
-                            </div>
+                            </>
+                        )}
+                    </div>
 
-                            {/* 수카드 (왼쪽) */}
-                            <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 48, border: '4px dashed #bbf7d0', padding: '32px', display: 'flex', flexDirection: 'column', gap: 20, overflow: 'hidden', justifyContent: 'center', position: 'relative' }}>
-                                <div className="card-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 32, alignItems: 'center', overflowY: 'auto', paddingBottom: 16, width: '100%' }}>
-                                    {p.type === 'read' ? (
-                                        <>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 32, alignItems: 'center' }}>
-                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 12 }}>
-                                                    {K_ORDER.map((c, i) => (
-                                                        <SelectionCard key={`ro-${c}-${i}`} value={c} onClick={() => handleCardClick(c, 0)} colorScheme="purple" small />
-                                                    ))}
+                    <div style={{ margin: '0 12px 0px', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        <div style={{ textAlign: 'center', fontWeight: 900, color: '#15803d', fontSize: 32 }}>알맞은 카드를 선택하세요!</div>
+                        <div style={{ display: 'flex', gap: 16, flex: 1, minHeight: 0, flexDirection: 'row-reverse', alignItems: 'stretch' }}>
+                            {phase === 1 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, flexShrink: 0, width: 240 }}>
+                                    <div style={{ background: 'white', borderRadius: 32, border: '6px solid #fde68a', padding: '24px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', flex: 1 }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                            {p.ans.map((_, idx) => (
+                                                <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                                                    <button
+                                                        onClick={() => clearDrop(idx)}
+                                                        style={{
+                                                            width: 90, height: 80, borderRadius: 16,
+                                                            border: `4px dashed ${idx === 0 ? '#bfdbfe' : '#fbcfe8'}`,
+                                                            background: 'white',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            fontSize: 36, fontWeight: 900,
+                                                            color: '#1e293b',
+                                                            boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.05)',
+                                                            cursor: drops[idx] ? 'pointer' : 'default',
+                                                            transition: 'all 0.15s',
+                                                            position: 'relative',
+                                                            boxSizing: 'border-box'
+                                                        }}>
+                                                        <span style={{ fontSize: 36 }}>{drops[idx] || ''}</span>
+                                                    </button>
                                                 </div>
-                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 12 }}>
-                                                    {K_UNITS.filter(u => u !== "").map((c, i) => (
-                                                        <SelectionCard key={`ru-${c}-${i}`} value={c} onClick={() => handleCardClick(c, 1)} colorScheme="orange" small />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* 버튼 이동: 노란색 박스 바깥쪽 아래 (가로 배치) */}
+                                    <div style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
+                                        <button
+                                            onClick={() => setDrops(new Array(p.ans.length).fill(null))}
+                                            className="main-btn"
+                                            style={{ flex: 1, padding: '12px 0', background: '#e11d48', color: 'white', borderRadius: 16, fontSize: 18, fontWeight: 900, border: 'none', cursor: 'pointer' }}>
+                                            수정 ↩
+                                        </button>
+                                        <button
+                                            className="main-btn"
+                                            onClick={checkAnswer}
+                                            style={{ flex: 1, padding: '12px 0', background: drops.includes(null) ? '#cbd5e1' : '#22c55e', color: 'white', borderRadius: 16, fontSize: 18, fontWeight: 900, border: 'none', cursor: drops.includes(null) ? 'not-allowed' : 'pointer' }}>
+                                            정답 ✅
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* 수카드 (왼쪽) — 노란색 박스와 높이 동일하게 맞춤 */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 12, minWidth: 0 }}>
+                                <div style={{ flex: 1, background: '#f0fdf4', borderRadius: 32, border: '4px dashed #bbf7d0', padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', justifyContent: 'center', alignItems: 'center', minHeight: 0 }}>
+                                <div className="card-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', overflow: 'hidden', width: '100%' }}>
+                                    {p.type === 'read' ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', alignItems: 'center' }}>
+                                            {/* 십의 자리 카드 */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 10, justifyContent: 'center' }}>
+                                                    {K_ORDER.map((c, i) => (
+                                                        <SelectionCard key={`ro-${c}-${i}`} value={c} onClick={() => handleCardClick(c, 0)} colorScheme="purple" small selected={drops[0] === c} />
                                                     ))}
                                                 </div>
                                             </div>
-                                        </>
+                                            {/* 일의 자리 카드 */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 10, justifyContent: 'center' }}>
+                                                    {K_UNITS.filter(u => u !== "").map((c, i) => (
+                                                        <SelectionCard key={`ru-${c}-${i}`} value={c} onClick={() => handleCardClick(c, 1)} colorScheme="orange" small selected={drops[1] === c} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
                                     ) : p.type === 'bundle' ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                            <div style={{ height: 85, display: 'flex', flexWrap: 'nowrap', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
+                                            <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, overflow: 'hidden', justifyContent: 'center' }}>
                                                 {S_ORDER.map((c, i) => (
-                                                    <SelectionCard key={`s-${c}-${i}`} value={c} onClick={() => handleCardClick(c, 0)} colorScheme="blue" small />
+                                                    <SelectionCard key={`s-${c}-${i}`} value={c} onClick={() => handleCardClick(c, 0)} colorScheme="blue" small selected={drops[0] === c} />
                                                 ))}
                                             </div>
-                                            <div style={{ height: 85, display: 'flex', flexWrap: 'nowrap', gap: 8, justifyContent: 'center', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 6, overflow: 'hidden', justifyContent: 'center' }}>
                                                 {K_ORDER.map((c, i) => (
-                                                    <SelectionCard key={`k-${c}-${i}`} value={c} onClick={() => handleCardClick(c, 1)} colorScheme="pink" small />
+                                                    <SelectionCard key={`k-${c}-${i}`} value={c} onClick={() => handleCardClick(c, 1)} colorScheme="pink" small selected={drops[1] === c} />
                                                 ))}
                                             </div>
                                         </div>
                                     ) : p.type === 'digit' ? (
-                                        <>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 32, alignItems: 'center' }}>
-                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 12 }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 20, width: '100%', alignItems: 'center' }}>
+                                            {/* 1~9: 십의 자리 */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                                <div style={{
+                                                    fontSize: 24, fontWeight: 900,
+                                                    color: '#6b21a8', background: '#f3e8ff',
+                                                    padding: '8px 20px', borderRadius: 16,
+                                                    border: '3px solid #d8b4fe',
+                                                    whiteSpace: 'nowrap', width: 130, textAlign: 'center'
+                                                }}>십의 자리</div>
+                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 10, justifyContent: 'center' }}>
                                                     {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map(d => (
-                                                        <SelectionCard key={`t-${d}`} value={d} onClick={() => handleCardClick(d, 0)} colorScheme="purple" small />
-                                                    ))}
-                                                </div>
-                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 12 }}>
-                                                    {ALL_DIGITS.map(d => (
-                                                        <SelectionCard key={`u-${d}`} value={d} onClick={() => handleCardClick(d, 1)} colorScheme="orange" small />
+                                                        <SelectionCard key={`t-${d}`} value={d} onClick={() => handleCardClick(d, 0)} colorScheme="purple" small selected={drops[0] === d} />
                                                     ))}
                                                 </div>
                                             </div>
-                                        </>
+                                            {/* 0~9: 일의 자리 */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                                <div style={{
+                                                    fontSize: 24, fontWeight: 900,
+                                                    color: '#854d0e', background: '#fff7ed',
+                                                    padding: '8px 20px', borderRadius: 16,
+                                                    border: '3px solid #fed7aa',
+                                                    whiteSpace: 'nowrap', width: 130, textAlign: 'center'
+                                                }}>일의 자리</div>
+                                                <div style={{ display: 'flex', flexWrap: 'nowrap', gap: 10, justifyContent: 'center' }}>
+                                                    {ALL_DIGITS.map(d => (
+                                                        <SelectionCard key={`u-${d}`} value={d} onClick={() => handleCardClick(d, 1)} colorScheme="orange" small selected={drops[1] === d} />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
                                     ) : (
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, justifyContent: 'center' }}>
                                             {cards.map((c, i) => (
@@ -1551,27 +1698,34 @@
                                             ))}
                                         </div>
                                     )}
-
-                                    {/* 정답 확인 버튼 높이만큼의 빈 공간 (정렬용) */}
-                                    <div style={{ height: 65, marginTop: 24 }} />
+                                    {/* spacer removed */}
                                 </div>
                             </div>
+                            {/* 버튼 행 높이와 동일한 투명 스페이서 — 노란색 박스와 높이 맞춤 */}
+                            <div style={{ height: 55, flexShrink: 0 }} />
                         </div>
                     </div>
+                </div>
 
-                    {feedback && (
+                {feedback && (
                         <div style={{ position: 'absolute', inset: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.1)', backdropFilter: 'blur(4px)' }}>
                             <div className="pop-in" style={{
-                                background: 'white', padding: 60, borderRadius: 48,
+                                background: 'white', padding: '80px 60px', borderRadius: 48,
                                 border: `8px solid ${feedback.type === 'correct' ? '#fde68a' : '#fca5a5'}`,
                                 boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
-                                textAlign: 'center', maxWidth: 600, width: '90%'
+                                textAlign: 'center', maxWidth: 700, width: '90%'
                             }}>
-                                <div style={{ fontSize: 100, marginBottom: 16 }}>{feedback.type === 'correct' ? '🌟' : '🧐'}</div>
-                                <h3 style={{ fontSize: 40, fontWeight: 900, marginBottom: 16 }}>{feedback.type === 'correct' ? '참 잘했어요!' : '다시 해볼까?'}</h3>
-                                <p style={{ color: '#64748b', fontSize: 28, fontWeight: 700, lineHeight: 1.6, marginBottom: 32, wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>{feedback.msg}</p>
+                                <div style={{ fontSize: 120, marginBottom: 24 }}>{feedback.type === 'correct' ? '🌟' : '🧐'}</div>
+                                <h3 style={{ fontSize: 52, fontWeight: 900, marginBottom: 24, color: '#1e293b' }}>{feedback.type === 'correct' ? '참 잘했어요!' : '다시 해볼까?'}</h3>
+                                <p style={{ color: '#475569', fontSize: 38, fontWeight: 700, lineHeight: 1.6, marginBottom: 48, wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
+                                    {feedback.msg.split(/([0-9]+)/).map((part, i) => 
+                                        /^[0-9]+$/.test(part) 
+                                            ? <span key={i} style={{ color: '#16a34a', fontSize: '1.2em', background: 'linear-gradient(to top, #dcfce7 40%, transparent 40%)', padding: '0 4px', margin: '0 4px', display: 'inline-block', verticalAlign: 'middle', fontWeight: 900 }}>{part}</span> 
+                                            : part
+                                    )}
+                                </p>
                                 <button className="confirm-btn" onClick={next}
-                                    style={{ width: '100%', padding: '20px', borderRadius: 24, fontSize: 32, fontWeight: 900, color: 'white', border: 'none', cursor: 'pointer', background: feedback.type === 'correct' ? '#22c55e' : '#ef4444', boxShadow: feedback.type === 'correct' ? '0 8px 20px rgba(34,197,94,0.4)' : '0 8px 20px rgba(239,68,68,0.4)' }}>
+                                    style={{ width: '100%', padding: '24px', borderRadius: 24, fontSize: 40, fontWeight: 900, color: 'white', border: 'none', cursor: 'pointer', background: feedback.type === 'correct' ? '#22c55e' : '#ef4444', boxShadow: feedback.type === 'correct' ? '0 10px 24px rgba(34,197,94,0.4)' : '0 10px 24px rgba(239,68,68,0.4)' }}>
                                     {feedback.type === 'correct' ? '확인' : '수정하기'}
                                 </button>
                             </div>
@@ -1627,14 +1781,32 @@
                                             </button>
                                         )}
                                         {phase < 4 && (
-                                            <button className="confirm-btn" onClick={() => goStage(phase + 1)}
-                                                style={{ flex: 1, padding: '20px', background: '#22c55e', color: 'white', borderRadius: 24, fontSize: 26, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 24px rgba(34,197,94,0.4)' }}>
+                                            <button className="confirm-btn" 
+                                                disabled={wrong.length > 0}
+                                                onClick={() => goStage(phase + 1)}
+                                                style={{ 
+                                                    flex: 1, padding: '20px', 
+                                                    background: wrong.length > 0 ? '#cbd5e1' : '#22c55e', 
+                                                    color: 'white', borderRadius: 24, fontSize: 26, fontWeight: 900, border: 'none', 
+                                                    cursor: wrong.length > 0 ? 'not-allowed' : 'pointer', 
+                                                    boxShadow: wrong.length > 0 ? 'none' : '0 8px 24px rgba(34,197,94,0.4)',
+                                                    opacity: wrong.length > 0 ? 0.6 : 1
+                                                }}>
                                                 다음 단계 모험하기 ⏩
                                             </button>
                                         )}
                                     </div>
-                                    <button className="confirm-btn" onClick={() => { setStep('map'); setStamp(false); setReviewMode(false); }}
-                                        style={{ padding: '16px', background: '#f1f5f9', color: '#94a3b8', borderRadius: 24, fontSize: 22, fontWeight: 900, border: 'none', cursor: 'pointer' }}>
+                                    <button className="confirm-btn" 
+                                        disabled={wrong.length > 0}
+                                        onClick={() => { setStep('map'); setStamp(false); setReviewMode(false); }}
+                                        style={{ 
+                                            padding: '16px', 
+                                            background: wrong.length > 0 ? '#f1f5f9' : '#f1f5f9', 
+                                            color: wrong.length > 0 ? '#e2e8f0' : '#94a3b8', 
+                                            borderRadius: 24, fontSize: 22, fontWeight: 900, border: 'none', 
+                                            cursor: wrong.length > 0 ? 'not-allowed' : 'pointer',
+                                            opacity: wrong.length > 0 ? 0.5 : 1
+                                        }}>
                                         지도로 돌아가기
                                     </button>
                                 </div>
@@ -1647,8 +1819,28 @@
             return null;
         }
 
+        function ScaleWrapper({ children }) {
+            const [scale, setScale] = useState(1);
+            useEffect(() => {
+                const handleResize = () => {
+                    const width = window.innerWidth;
+                    const height = window.innerHeight;
+                    const scaleFactor = Math.min(width / 1280, height / 800);
+                    setScale(scaleFactor);
+                };
+                handleResize();
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+            return (
+                <div className="scale-container" style={{ transform: `scale(${scale})` }}>
+                    {children}
+                </div>
+            );
+        }
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<ScaleWrapper><App /></ScaleWrapper>);
     </script>
 </body>
 
