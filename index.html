@@ -222,7 +222,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyb7lgmyHLlvJa0ZffI7ZNZ9Sc-92JOuDkwgLdlTYrilbE1qhu17oS0VA-wY8IOo-Dt/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxl1BQkTi5r8WakfbiJXc_Ji8IrVP6VVkuV_k8Q4K2yD44yUFs3V0H5Rz1oCrDDJt97/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -826,6 +826,11 @@
                         setVoiceResult(matched ? 'correct' : 'wrong');
                         setIsRecording(false);
 
+                        // ★ 처음 틀린 순간 바로 'wrong' 목록에 추가 (나중에 정답을 맞혀도 정답률/정답내용에서 제외하기 위함)
+                        if (!matched && !reviewMode && !wrong.find(w => w.id === p.id)) {
+                            setWrong(pr => [...pr, p]);
+                        }
+
                         if (matched) {
                             speak(voiceStep === 'sino' ? '정답이야! 이제 우리말로 바꿔볼까?' : '정답이야! 너무 잘 읽었어.', muted);
                             if (window.confetti && voiceStep === 'native') window.confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#3b82f6', '#fbbf24', '#ef4444'] });
@@ -865,9 +870,6 @@
 
             // 음성 다음 문제
             const nextVoice = () => {
-                if (voiceResult === 'wrong' && !reviewMode && !wrong.find(w => w.id === p.id)) {
-                    setWrong(pr => [...pr, p]);
-                }
                 setTranscript('');
                 setVoiceResult(null);
                 if (probIdx < problems.length - 1) {
