@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<!-- ================================================================
-     ★ GAS 웹 앱 URL을 아래에 입력하세요 ★
-     GAS_URL: https://script.google.com/macros/s/AKfycbzbYlucxFOR98PD1Bi3gb5-dZv7Ux8Tk95XBArEc6AkKBfCt9ddLJlC2hdFvGv486LI/exec
-     ================================================================ -->
+<!-- ★ GAS 웹 앱 URL: 아래 GAS_WEB_APP_URL 값을 수정하세요 ★ -->
+<script>
+    const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxAAMyURi2ZBcATYCN1mbUrNrfl63gR4TTDqLeSV2OyktEvrN9-mWG0pO_x34_LrfDN/exec";
+</script>
 <html lang="ko">
 
 <head>
@@ -232,13 +232,6 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        /* ================================================================
-         * ★ 여기에 구글 앱스크립트 웹 앱 URL을 입력하세요 ★
-         * GAS 배포 후 받은 URL을 아래에 붙여넣기 하세요.
-         * ================================================================ */
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzbYlucxFOR98PD1Bi3gb5-dZv7Ux8Tk95XBArEc6AkKBfCt9ddLJlC2hdFvGv486LI/exec";
-        /* ================================================================ */
-
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         /**
@@ -1006,16 +999,24 @@
 
                         // CASE A: 사용자가 한글로 직접 말한 경우 (숫자 없음)
                         if (!/[0-9]/.test(primaryClean)) {
-                            // 반대 단계 읽기를 말했으면 명시적으로 오답
-                            if (cleanPrimary.length >= 2 && cleanPrimary === cleanOpposite) {
-                                matched = false;
-                                bestText = cleanPrimary;
-                            }
                             // 정답과 정확히 일치
-                            else if (cleanPrimary.length >= 2 && cleanPrimary === cleanTarget) {
+                            if (cleanPrimary.length >= 2 && cleanPrimary === cleanTarget) {
                                 matched = true;
                                 bestText = cleanPrimary;
-                            } else {
+                            }
+                            // ★ 특수 케이스: sino 단계에서 인식기가 한자어를 우리말로 자동 변환한 경우
+                            // (예: "십일" → "열하나", "칠십이" → "일흔둘"로 인식)
+                            // → 학생이 실제로 한자어를 말했을 가능성이 높으므로 정답 처리
+                            else if (voiceStep === 'sino' && cleanPrimary.length >= 2 && cleanPrimary === cleanOpposite) {
+                                matched = true;
+                                bestText = targetReading; // 화면에는 한자어 정답으로 표시
+                            }
+                            // native 단계에서 반대(한자어)를 말한 경우 → 오답
+                            else if (voiceStep === 'native' && cleanPrimary.length >= 2 && cleanPrimary === cleanOpposite) {
+                                matched = false;
+                                bestText = oppositeReading;
+                            }
+                            else {
                                 matched = false;
                                 bestText = cleanPrimary || primaryClean;
                             }
@@ -1664,7 +1665,8 @@
                                     boxShadow: '0 12px 28px rgba(0,0,0,0.2)',
                                     position: 'relative',
                                     display: 'flex', flexDirection: 'column', gap: 10,
-                                    marginTop: 8
+                                    marginTop: 8,
+                                    maxWidth: 'calc(100% - 100px)'
                                 }}>
                                     {/* 말풍선 꼬리 (왼쪽으로 향함, 위쪽 정렬) */}
                                     <div style={{
@@ -1686,9 +1688,10 @@
 
                                     <p style={{
                                         fontSize: 26, fontWeight: 900, color: '#1e293b',
-                                        lineHeight: 1.5, margin: 0,
-                                        whiteSpace: 'nowrap'
-                                    }}>{currentStep.message.replace(/\n/g, ' ')}</p>
+                                        lineHeight: 1.6, margin: 0,
+                                        whiteSpace: 'pre-line',
+                                        wordBreak: 'keep-all'
+                                    }}>{currentStep.message}</p>
 
                                     {/* 다음/시작 버튼 */}
                                     {isNextAction && (
@@ -2068,7 +2071,7 @@
                         )}
 
                         {/* 건너뛰기 버튼 (음성 인식이 안 될 때 - 녹음 시도 후에만 표시) */}
-                        {!voiceResult && !isRecording && recordingAttempted && (
+                        {!voiceResult && recordingAttempted && (
                             <button
                                 onClick={() => {
                                     // 현재 단계를 오답으로 기록
@@ -2468,8 +2471,10 @@
                     {stamp && (
                         <div style={{ position: 'absolute', inset: 0, zIndex: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)' }}>
                             <div className="stamp-in" style={{ background: 'white', padding: '48px 64px', borderRadius: 64, boxShadow: '0 40px 100px rgba(0,0,0,0.2)', border: '12px solid #a7f3d0', textAlign: 'center', maxWidth: 700, width: '90%' }}>
-                                <div style={{ fontSize: 80, marginBottom: 12 }}>🎙️</div>
-                                <h2 style={{ fontSize: 44, fontWeight: 900, color: '#166534', marginBottom: 16 }}>소리로 읽기 완료!</h2>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 16 }}>
+                                    <div style={{ fontSize: 60 }}>🎙️</div>
+                                    <h2 style={{ fontSize: 44, fontWeight: 900, color: '#166534', margin: 0 }}>소리로 읽기 완료!</h2>
+                                </div>
                                 <div style={{ background: '#f0fdf4', borderRadius: 32, padding: '32px', margin: '24px 0 40px', border: '4px solid #bbf7d0' }}>
                                     <div style={{ display: 'flex', justifyContent: 'center', gap: 60, alignItems: 'center' }}>
                                         <div style={{ textAlign: 'center' }}>
@@ -2795,8 +2800,10 @@
                                 boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
                                 textAlign: 'center', maxWidth: 700, width: '90%'
                             }}>
-                                <div style={{ fontSize: 120, marginBottom: 24 }}>{feedback.type === 'correct' ? '🌟' : '🧐'}</div>
-                                <h3 style={{ fontSize: 52, fontWeight: 900, marginBottom: 24, color: '#1e293b' }}>{feedback.type === 'correct' ? '참 잘했어요!' : '다시 해볼까?'}</h3>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24 }}>
+                                    <div style={{ fontSize: 80 }}>{feedback.type === 'correct' ? '🌟' : '🧐'}</div>
+                                    <h3 style={{ fontSize: 52, fontWeight: 900, color: '#1e293b', margin: 0 }}>{feedback.type === 'correct' ? '참 잘했어요!' : '다시 해볼까?'}</h3>
+                                </div>
                                 <p style={{ color: '#475569', fontSize: 38, fontWeight: 700, lineHeight: 1.6, marginBottom: 48, wordBreak: 'keep-all', whiteSpace: 'pre-line' }}>
                                     {feedback.msg.split(/([0-9]+)/).map((part, i) => 
                                         /^[0-9]+$/.test(part) 
@@ -2818,8 +2825,10 @@
                                 background: 'white', padding: '48px 64px', borderRadius: 64, boxShadow: '0 40px 100px rgba(0,0,0,0.2)',
                                 border: '12px solid #a7f3d0', textAlign: 'center', maxWidth: 1000, width: '90%'
                             }}>
-                                <div style={{ fontSize: 80, marginBottom: 12 }}>📊</div>
-                                <h2 style={{ fontSize: 44, fontWeight: 900, color: '#166534', marginBottom: 24 }}>학습 결과 보고서</h2>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24 }}>
+                                    <div style={{ fontSize: 60 }}>📊</div>
+                                    <h2 style={{ fontSize: 44, fontWeight: 900, color: '#166534', margin: 0 }}>학습 결과 보고서</h2>
+                                </div>
 
                                 <div style={{ textAlign: 'left', background: '#f0fdf4', padding: 28, borderRadius: 32, marginBottom: 32, width: '100%', border: '2px solid #dcfce7' }}>
                                     <p style={{ fontSize: 24, marginBottom: 16 }}>👤 <b>모험가:</b> {currentUser?.name} ({currentUser?.num}번)</p>
