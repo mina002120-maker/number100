@@ -231,7 +231,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby769Uv-FT7AkFktVi9pLMliArD4S5KNCNgRJmuNdsAbz2FQBXbcE2wcE8R8sd1LkrD/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyfTQR2kWfeFRGgEOF2kb67XuU7VynO8wrd_NbfWlCojyCbzVi6Qu7XqDITFAKXJMQ/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -322,9 +322,12 @@
                 steps: [
                     { target: 'question', message: '보라색 십 모형이 몇 개 있나요?\n3개가 있네요! 🟪', action: 'next' },
                     { target: 'card-삼십', message: '\'삼십\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '삼십', expectedIdx: 0 },
+                    // 일부러 잘못된 카드 누르게 해서 수정 연습
+                    { target: 'card-마흔', message: '잘했어요! 그런데 두 번째 카드는...\n일부러 \'마흔\'을 눌러볼까요? 👇', action: 'click', expectedValue: '마흔', expectedIdx: 1 },
+                    { target: 'reset', message: '앗! \'마흔\'은 30과 달라요. 😅\n\'수정\' 버튼을 눌러서 지워볼까요? ↩', action: 'click' },
                     { target: 'card-서른', message: '잘했어요! 이번엔 \'서른\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '서른', expectedIdx: 1 },
-                    { target: 'submit', message: '두 칸을 모두 채웠어요!\n이제 정답 버튼을 눌러보세요! ✅', action: 'click' },
-                    { target: 'center', message: '참 잘했어요! 🎉\n이제 진짜 문제를 풀어볼까요?', action: 'finish' }
+                    { target: 'submit', message: '두 칸을 모두 채웠어요!\n이제 \'정답\' 버튼을 눌러보세요! ✅', action: 'click' },
+                    { target: 'center', message: '참 잘했어요! 🎉\n\'수정\' 버튼은 답을 바꾸고 싶을 때\n언제든 사용할 수 있어요!', action: 'finish' }
                 ]
             },
             2: {
@@ -336,25 +339,39 @@
                 },
                 steps: [
                     { target: 'question', message: '\'스물다섯\'을 숫자로 써볼까요?\n\'스물\'은 10이 2개, \'다섯\'은 5예요!', action: 'next' },
-                    { target: 'card-2', message: '십의 자리에 \'2\'를 눌러보세요! 👇', action: 'click', expectedValue: '2', expectedIdx: 0 },
-                    { target: 'card-5', message: '잘했어요! 일의 자리에 \'5\'를 눌러보세요! 👇', action: 'click', expectedValue: '5', expectedIdx: 1 },
+                    { target: 'card-tens-2', message: '먼저 보라색 \'십의 자리\'에서\n\'2\'를 눌러보세요! 👇', action: 'click', expectedValue: '2', expectedIdx: 0 },
+                    { target: 'card-units-5', message: '잘했어요!\n이번엔 주황색 \'일의 자리\'에서\n\'5\'를 눌러보세요! 👇', action: 'click', expectedValue: '5', expectedIdx: 1 },
                     { target: 'submit', message: '두 자리를 다 썼어요!\n정답 버튼을 눌러보세요! ✅', action: 'click' },
                     { target: 'center', message: '참 잘했어요! 🎉\n이제 진짜 문제를 풀어볼까요?', action: 'finish' }
                 ]
             },
             3: {
                 title: "3단계 연습",
-                tutorialProblem: {
-                    id: 'tut-p3', phase: 3, type: 'digit', q: 47,
-                    ans: ['4', '7'],
-                    hint: '십 모형이 4개, 낱개가 7개 있어요.'
-                },
+                // 3단계는 두 문제 (숫자 쓰기 → 우리말 읽기)
+                tutorialProblems: [
+                    {
+                        id: 'tut-p3a', phase: 3, type: 'digit', q: 47,
+                        ans: ['4', '7'],
+                        hint: '십 모형이 4개, 낱개가 7개 있어요.'
+                    },
+                    {
+                        id: 'tut-p3b', phase: 3, type: 'read', q: 47,
+                        ans: ['마흔', '일곱'],
+                        hint: '십 모형이 4개 → 마흔, 낱개가 7개 → 일곱'
+                    }
+                ],
                 steps: [
-                    { target: 'question', message: '십 모형 4개와 낱개 7개가 있어요!\n숫자로 어떻게 쓸까요? 🔢', action: 'next' },
-                    { target: 'card-4', message: '십의 자리에 \'4\'를 눌러보세요! 👇', action: 'click', expectedValue: '4', expectedIdx: 0 },
-                    { target: 'card-7', message: '잘했어요! 일의 자리에 \'7\'을 눌러보세요! 👇', action: 'click', expectedValue: '7', expectedIdx: 1 },
-                    { target: 'submit', message: '정답 버튼을 눌러보세요! ✅', action: 'click' },
-                    { target: 'center', message: '참 잘했어요! 🎉\n3단계에서는 숫자로 쓴 다음,\n우리말로도 읽어볼 거예요!', action: 'finish' }
+                    // Part 1: 숫자 쓰기
+                    { problemIdx: 0, target: 'question', message: '먼저 숫자로 써볼까요? 🔢\n십 모형 4개와 낱개 7개가 있어요!', action: 'next' },
+                    { problemIdx: 0, target: 'card-tens-4', message: '보라색 \'십의 자리\'에서\n\'4\'를 눌러보세요! 👇', action: 'click', expectedValue: '4', expectedIdx: 0 },
+                    { problemIdx: 0, target: 'card-units-7', message: '잘했어요!\n주황색 \'일의 자리\'에서\n\'7\'을 눌러보세요! 👇', action: 'click', expectedValue: '7', expectedIdx: 1 },
+                    { problemIdx: 0, target: 'submit', message: '정답 버튼을 눌러보세요! ✅', action: 'click' },
+                    // Part 2: 우리말 읽기 (이어서)
+                    { problemIdx: 1, target: 'question', message: '잘했어요! 🎉\n이번엔 우리말로 읽어볼까요? 🗣️\n같은 모형을 우리말로 어떻게 읽을까요?', action: 'next' },
+                    { problemIdx: 1, target: 'card-tens-마흔', message: '보라색 \'십의 자리\'에서\n\'마흔\'을 눌러보세요! 👇\n(십 모형 4개 → 마흔)', action: 'click', expectedValue: '마흔', expectedIdx: 0 },
+                    { problemIdx: 1, target: 'card-units-일곱', message: '잘했어요!\n주황색 \'일의 자리\'에서\n\'일곱\'을 눌러보세요! 👇\n(낱개 7개 → 일곱)', action: 'click', expectedValue: '일곱', expectedIdx: 1 },
+                    { problemIdx: 1, target: 'submit', message: '정답 버튼을 눌러보세요! ✅', action: 'click' },
+                    { problemIdx: 1, target: 'center', message: '참 잘했어요! 🎉\n3단계에서는 이렇게 숫자로 쓴 다음,\n우리말로도 읽는 두 문제를 풀어요!', action: 'finish' }
                 ]
             },
             4: {
@@ -362,9 +379,9 @@
                 tutorialProblem: null,  // 실제 첫 문제 사용
                 steps: [
                     { target: 'question', message: '숫자와 모형을 잘 보세요! 👀', action: 'next' },
-                    { target: 'voice-1', message: '왼쪽 칸의 🎙️ 녹음 버튼을 눌러\n한자어(예: 칠십구)로 읽어요!', action: 'next' },
-                    { target: 'voice-2', message: '맞으면 오른쪽 칸이 열려요.\n우리말(예: 일흔아홉)로 읽어요!', action: 'next' },
-                    { target: 'hint-btn', message: '헷갈리면 💡 힌트 버튼을 눌러\n우리말 표를 볼 수 있어요!', action: 'next' },
+                    { target: 'voice-1', message: '왼쪽 칸의 🎙️ 녹음 버튼을 눌러\n첫 번째 방법(예: 칠십구)으로 읽어요!', action: 'next' },
+                    { target: 'voice-2', message: '맞으면 오른쪽 칸이 열려요.\n두 번째 방법(예: 일흔아홉)으로 읽어요!', action: 'next' },
+                    { target: 'hint-btn', message: '헷갈리면 💡 힌트 버튼을 눌러\n숫자 읽기 표를 볼 수 있어요!', action: 'next' },
                     { target: 'center', message: '준비 됐어요? 🎉\n이제 진짜 문제를 풀어볼까요?', action: 'finish' }
                 ]
             }
@@ -628,6 +645,7 @@
             const [voiceResult, setVoiceResult] = useState(null); // null | 'correct' | 'wrong'
             const [voiceStep, setVoiceStep] = useState('sino'); // 'sino' | 'native'
             const [showHint, setShowHint] = useState(false);
+            const [recordingAttempted, setRecordingAttempted] = useState(false); // 녹음 시도 여부
             const [allProbs, setAllProbs] = useState(() => buildProblems());
             const [showConfig4, setShowConfig4] = useState(false);
             const [sessionId, setSessionId] = useState('');
@@ -686,6 +704,20 @@
                 if (p && step === 'play' && p.type !== 'voice') setDrops(new Array(p.ans.length).fill(null));
             }, [p?.id, step, tutorial]);
 
+            // 튜토리얼 step 변경 시 problemIdx가 바뀌면 drops 초기화
+            useEffect(() => {
+                if (!tutorial) return;
+                const scenario = TUTORIAL_DATA[tutorial];
+                if (!scenario?.tutorialProblems) return;  // 단일 문제면 처리 불필요
+                const currentStep = scenario.steps[tutorialStep];
+                const prevStep = tutorialStep > 0 ? scenario.steps[tutorialStep - 1] : null;
+                // 이전 step과 problemIdx가 다르면 (문제 전환) drops 초기화
+                if (currentStep && prevStep && (currentStep.problemIdx ?? 0) !== (prevStep.problemIdx ?? 0)) {
+                    const newProblem = scenario.tutorialProblems[currentStep.problemIdx];
+                    if (newProblem) setDrops(new Array(newProblem.ans.length).fill(null));
+                }
+            }, [tutorialStep, tutorial]);
+
             // 음성 상태 초기화 (문제 변경 시)
             useEffect(() => {
                 setTranscript('');
@@ -694,11 +726,17 @@
                 setVoiceStep('sino');
                 setIsRecording(false);
                 setShowHint(false);
+                setRecordingAttempted(false);  // 새 문제에서는 녹음 시도 초기화
                 if (recogRef.current) {
                     try { recogRef.current.abort(); } catch (e) { }
                     recogRef.current = null;
                 }
             }, [probIdx, phase]);
+
+            // voiceStep 변경 시(sino → native) 녹음 시도 초기화
+            useEffect(() => {
+                setRecordingAttempted(false);
+            }, [voiceStep]);
 
             const handleCardClick = (val, targetIdx) => {
                 // 튜토리얼 모드에서는 예상 동작과 일치할 때만 진행 허용
@@ -894,6 +932,7 @@
                 recog.interimResults = true;  // 실시간 중간 결과 활성화
                 recog.maxAlternatives = 5;
                 setIsRecording(true);
+                setRecordingAttempted(true);  // 녹음 시도함 - 건너뛰기 버튼 활성화
                 setTranscript('');
                 setInterimTranscript('');
                 setVoiceResult(null);
@@ -923,36 +962,64 @@
                         const primaryRaw = event.results[event.results.length - 1][0].transcript;
                         const primaryClean = primaryRaw.replace(/\s/g, '').replace(/[.,!?~]/g, '');
 
-                        // 숫자가 들어왔을 경우만 변환 (사용자가 한글로 말한 경우는 그대로 비교)
-                        let primaryConverted = primaryClean;
-                        if (/[0-9]/.test(primaryClean)) {
-                            primaryConverted = primaryClean.replace(new RegExp(p.q.toString(), 'g'), voiceStep === 'sino' ? p.sinoReading : p.nativeReading);
-                            primaryConverted = voiceStep === 'sino' ? convertDigitsToSino(primaryConverted) : convertDigitsToNative(primaryConverted);
-                        }
-
                         const targetReading = voiceStep === 'sino' ? p.sinoReading : p.nativeReading;
                         const oppositeReading = voiceStep === 'sino' ? p.nativeReading : p.sinoReading;
 
+                        // 숫자가 인식된 경우 양방향 변환을 모두 시도해서 어느 쪽과 매치되는지 확인
+                        // (인식기가 "72"를 반환했을 때, 사용자가 "칠십이"를 말했을 수도, "일흔둘"을 말했을 수도 있음)
+                        let primarySinoForm = primaryClean;
+                        let primaryNativeForm = primaryClean;
+                        if (/[0-9]/.test(primaryClean)) {
+                            primarySinoForm = convertDigitsToSino(primaryClean);
+                            primaryNativeForm = convertDigitsToNative(primaryClean);
+                        }
+
                         // 한글만 추출하여 비교
-                        const cleanPrimary = primaryConverted.replace(/[^가-힣]/g, '');
+                        const cleanSino = primarySinoForm.replace(/[^가-힣]/g, '');
+                        const cleanNative = primaryNativeForm.replace(/[^가-힣]/g, '');
                         const cleanTarget = targetReading.replace(/[^가-힣]/g, '');
                         const cleanOpposite = oppositeReading.replace(/[^가-힣]/g, '');
 
-                        let matched = false;
-                        let bestText = primaryConverted;
+                        // 비교 대상: 사용자가 숫자가 아닌 한글로 직접 말한 경우 그대로 사용
+                        const cleanPrimary = primaryClean.replace(/[^가-힣]/g, '');
 
-                        // 1) 반대 단계 읽기를 말했으면 명시적으로 오답 (sino 단계에서 우리말, native 단계에서 한자어)
-                        if (cleanPrimary === cleanOpposite) {
-                            matched = false;
+                        let matched = false;
+                        let bestText = primaryClean;
+
+                        // CASE A: 사용자가 한글로 직접 말한 경우 (숫자 없음)
+                        if (!/[0-9]/.test(primaryClean)) {
+                            // 반대 단계 읽기를 말했으면 명시적으로 오답
+                            if (cleanPrimary.length >= 2 && cleanPrimary === cleanOpposite) {
+                                matched = false;
+                                bestText = cleanPrimary;
+                            }
+                            // 정답과 정확히 일치
+                            else if (cleanPrimary.length >= 2 && cleanPrimary === cleanTarget) {
+                                matched = true;
+                                bestText = cleanPrimary;
+                            } else {
+                                matched = false;
+                                bestText = cleanPrimary || primaryClean;
+                            }
                         }
-                        // 2) 정답과 정확히 일치 (한글 기준)
-                        else if (cleanPrimary.length >= 2 && cleanPrimary === cleanTarget) {
-                            matched = true;
-                            bestText = cleanPrimary;
-                        }
-                        // 3) 정확히 일치하지 않으면 오답 (부분 일치 허용 안 함)
+                        // CASE B: 숫자가 인식된 경우 - 양방향 변환 후 비교
                         else {
-                            matched = false;
+                            // 현재 단계 형식으로 변환한 것이 정답과 일치하면 정답
+                            const currentForm = voiceStep === 'sino' ? cleanSino : cleanNative;
+                            if (currentForm.length >= 2 && currentForm === cleanTarget) {
+                                matched = true;
+                                bestText = currentForm;
+                            } else {
+                                matched = false;
+                                // 사용자가 반대 단계로 읽었는지 확인 (피드백용)
+                                const oppositeForm = voiceStep === 'sino' ? cleanNative : cleanSino;
+                                if (oppositeForm.length >= 2 && oppositeForm === cleanOpposite) {
+                                    // 반대 단계로 읽음 - 학생이 실제로 발화한 형태로 표시
+                                    bestText = oppositeForm;
+                                } else {
+                                    bestText = currentForm || primaryClean;
+                                }
+                            }
                         }
 
                         setInterimTranscript('');
@@ -1096,7 +1163,10 @@
                 const isLast = tutorialStep === scenario.steps.length - 1;
 
                 // 튜토리얼용 가짜 문제 (각 단계별)
-                const tutP = scenario.tutorialProblem;
+                // tutorialProblems(배열)이 있으면 현재 step의 problemIdx 사용, 없으면 단일 tutorialProblem
+                const tutP = scenario.tutorialProblems
+                    ? scenario.tutorialProblems[currentStep.problemIdx || 0]
+                    : scenario.tutorialProblem;
 
                 // 강조 박스 헬퍼 - 특정 타겟일 때만 노란 반짝 테두리 추가
                 const highlightIf = (targetName, extraStyle = {}) => {
@@ -1114,14 +1184,25 @@
                 };
 
                 // 카드 클릭 처리 (튜토리얼 내부용)
-                const onTutorialCardClick = (val, idx) => {
-                    if (currentStep.action === 'click' && currentStep.target === `card-${val}` && currentStep.expectedValue === val) {
+                // position: 'tens'(십의 자리) | 'units'(일의 자리) | null(1단계: 한자어/우리말은 카드 값 자체로 구분)
+                const onTutorialCardClick = (val, idx, position) => {
+                    // 타겟 ID 결정: 2/3단계는 'card-tens-X' 또는 'card-units-X', 1단계는 'card-X'
+                    const cardId = position ? `card-${position}-${val}` : `card-${val}`;
+                    if (currentStep.action === 'click' && currentStep.target === cardId && currentStep.expectedValue === val && currentStep.expectedIdx === idx) {
                         let nextDrops = [...drops];
                         if (nextDrops.length === 0 || nextDrops.length !== (tutP?.ans.length || 2)) {
                             nextDrops = new Array(tutP?.ans.length || 2).fill(null);
                         }
-                        nextDrops[currentStep.expectedIdx] = val;
+                        nextDrops[idx] = val;
                         setDrops(nextDrops);
+                        setTimeout(() => setTutorialStep(tutorialStep + 1), 300);
+                    }
+                };
+
+                // 수정 버튼 클릭 처리 (튜토리얼 내부용)
+                const onTutorialReset = () => {
+                    if (currentStep.action === 'click' && currentStep.target === 'reset') {
+                        setDrops(new Array(tutP?.ans.length || 2).fill(null));
                         setTimeout(() => setTutorialStep(tutorialStep + 1), 300);
                     }
                 };
@@ -1188,17 +1269,29 @@
                                                 }}>{drops[idx] || ''}</div>
                                             ))}
                                         </div>
-                                        <button
-                                            onClick={onTutorialSubmit}
-                                            disabled={drops.includes(null) || drops.length === 0}
-                                            style={highlightIf('submit', {
-                                                padding: '10px', background: (drops.includes(null) || drops.length === 0) ? '#cbd5e1' : '#22c55e',
-                                                color: 'white', borderRadius: 12, fontSize: 14, fontWeight: 900,
-                                                border: 'none', cursor: (drops.includes(null) || drops.length === 0) ? 'not-allowed' : 'pointer',
-                                                fontFamily: 'inherit'
-                                            })}>
-                                            정답 ✅
-                                        </button>
+                                        <div style={{ display: 'flex', gap: 6 }}>
+                                            <button
+                                                onClick={onTutorialReset}
+                                                style={highlightIf('reset', {
+                                                    flex: 1, padding: '10px 0', background: '#e11d48',
+                                                    color: 'white', borderRadius: 12, fontSize: 13, fontWeight: 900,
+                                                    border: 'none', cursor: 'pointer', fontFamily: 'inherit'
+                                                })}>
+                                                수정 ↩
+                                            </button>
+                                            <button
+                                                onClick={onTutorialSubmit}
+                                                disabled={drops.includes(null) || drops.length === 0}
+                                                style={highlightIf('submit', {
+                                                    flex: 1, padding: '10px 0',
+                                                    background: (drops.includes(null) || drops.length === 0) ? '#cbd5e1' : '#22c55e',
+                                                    color: 'white', borderRadius: 12, fontSize: 13, fontWeight: 900,
+                                                    border: 'none', cursor: (drops.includes(null) || drops.length === 0) ? 'not-allowed' : 'pointer',
+                                                    fontFamily: 'inherit'
+                                                })}>
+                                                정답 ✅
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
@@ -1208,6 +1301,19 @@
                                             <div style={{ display: 'flex', gap: 10 }}>
                                                 {tutP.ans.map((_, idx) => (
                                                     <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                                                        {/* read 타입(3단계 Part 2)일 때만 보이는 작은 숫자 카드 */}
+                                                        {tutP.type === 'read' && (
+                                                            <div style={{
+                                                                width: 36, height: 30, borderRadius: 8,
+                                                                background: idx === 0 ? '#a855f7' : '#f97316',
+                                                                border: `2px solid ${idx === 0 ? '#9333ea' : '#ea580c'}`,
+                                                                color: 'white',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                fontSize: 18, fontWeight: 900
+                                                            }}>
+                                                                {idx === 0 ? Math.floor(tutP.q / 10) : tutP.q % 10}
+                                                            </div>
+                                                        )}
                                                         <div style={{
                                                             fontSize: 11, fontWeight: 900,
                                                             color: idx === 0 ? '#6b21a8' : '#854d0e',
@@ -1220,7 +1326,7 @@
                                                             border: `3px dashed ${idx === 0 ? '#d8b4fe' : '#fed7aa'}`,
                                                             background: 'white',
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                            fontSize: 30, fontWeight: 900, color: '#1e293b'
+                                                            fontSize: tutP.type === 'read' ? 18 : 30, fontWeight: 900, color: '#1e293b'
                                                         }}>{drops[idx] || ''}</div>
                                                     </div>
                                                 ))}
@@ -1278,14 +1384,14 @@
                                     </>
                                 )}
 
-                                {(tutorial === 2 || tutorial === 3) && (
+                                {(tutorial === 2 || tutorial === 3) && tutP.type === 'digit' && (
                                     <>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
                                             <div style={{ fontSize: 13, fontWeight: 900, color: '#6b21a8', background: '#f3e8ff', padding: '4px 10px', borderRadius: 10, border: '2px solid #d8b4fe', minWidth: 60, textAlign: 'center' }}>십의 자리</div>
                                             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                                                 {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map(d => (
-                                                    <button key={`t-${d}`} onClick={() => onTutorialCardClick(d, 0)}
-                                                        style={highlightIf(`card-${d}`, drops[0] !== d ? {
+                                                    <button key={`t-${d}`} onClick={() => onTutorialCardClick(d, 0, 'tens')}
+                                                        style={highlightIf(`card-tens-${d}`, drops[0] !== d ? {
                                                             background: 'white', color: '#334155',
                                                             border: '3px solid #d8b4fe',
                                                             borderRadius: 10, padding: 0,
@@ -1307,8 +1413,8 @@
                                             <div style={{ fontSize: 13, fontWeight: 900, color: '#854d0e', background: '#fff7ed', padding: '4px 10px', borderRadius: 10, border: '2px solid #fed7aa', minWidth: 60, textAlign: 'center' }}>일의 자리</div>
                                             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                                                 {ALL_DIGITS.map(d => (
-                                                    <button key={`u-${d}`} onClick={() => onTutorialCardClick(d, 1)}
-                                                        style={highlightIf(`card-${d}`, drops[1] !== d ? {
+                                                    <button key={`u-${d}`} onClick={() => onTutorialCardClick(d, 1, 'units')}
+                                                        style={highlightIf(`card-units-${d}`, drops[1] !== d ? {
                                                             background: 'white', color: '#334155',
                                                             border: '3px solid #fed7aa',
                                                             borderRadius: 10, padding: 0,
@@ -1323,6 +1429,58 @@
                                                             fontSize: 18, fontWeight: 900,
                                                             cursor: 'pointer', fontFamily: 'inherit'
                                                         })}>{d}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* 3단계 Part 2: 우리말 읽기 카드 */}
+                                {tutorial === 3 && tutP.type === 'read' && (
+                                    <>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                                            <div style={{ fontSize: 13, fontWeight: 900, color: '#6b21a8', background: '#f3e8ff', padding: '4px 10px', borderRadius: 10, border: '2px solid #d8b4fe', minWidth: 60, textAlign: 'center' }}>십의 자리</div>
+                                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                {K_ORDER.map((c) => (
+                                                    <button key={`rt-${c}`} onClick={() => onTutorialCardClick(c, 0, 'tens')}
+                                                        style={highlightIf(`card-tens-${c}`, drops[0] !== c ? {
+                                                            background: 'white', color: '#334155',
+                                                            border: '3px solid #d8b4fe',
+                                                            borderRadius: 10, padding: 0,
+                                                            width: 56, height: 40,
+                                                            fontSize: 16, fontWeight: 900,
+                                                            cursor: 'pointer', fontFamily: 'inherit'
+                                                        } : {
+                                                            background: '#a855f7', color: 'white',
+                                                            border: '3px solid #9333ea',
+                                                            borderRadius: 10, padding: 0,
+                                                            width: 56, height: 40,
+                                                            fontSize: 16, fontWeight: 900,
+                                                            cursor: 'pointer', fontFamily: 'inherit'
+                                                        })}>{c}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                                            <div style={{ fontSize: 13, fontWeight: 900, color: '#854d0e', background: '#fff7ed', padding: '4px 10px', borderRadius: 10, border: '2px solid #fed7aa', minWidth: 60, textAlign: 'center' }}>일의 자리</div>
+                                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                {K_UNITS.filter(u => u !== "").map((c) => (
+                                                    <button key={`ru-${c}`} onClick={() => onTutorialCardClick(c, 1, 'units')}
+                                                        style={highlightIf(`card-units-${c}`, drops[1] !== c ? {
+                                                            background: 'white', color: '#334155',
+                                                            border: '3px solid #fed7aa',
+                                                            borderRadius: 10, padding: 0,
+                                                            width: 56, height: 40,
+                                                            fontSize: 16, fontWeight: 900,
+                                                            cursor: 'pointer', fontFamily: 'inherit'
+                                                        } : {
+                                                            background: '#f97316', color: 'white',
+                                                            border: '3px solid #ea580c',
+                                                            borderRadius: 10, padding: 0,
+                                                            width: 56, height: 40,
+                                                            fontSize: 16, fontWeight: 900,
+                                                            cursor: 'pointer', fontFamily: 'inherit'
+                                                        })}>{c}</button>
                                                 ))}
                                             </div>
                                         </div>
@@ -1455,9 +1613,9 @@
                             {/* 🦊 여우 + 말풍선 (떠있는 팝업) */}
                             <div className="pop-in" key={tutorialStep} style={{
                                 position: 'absolute',
-                                bottom: 20, left: 20,
+                                top: 70, left: 20,
                                 zIndex: 5,
-                                display: 'flex', alignItems: 'flex-end', gap: 12,
+                                display: 'flex', alignItems: 'flex-start', gap: 12,
                                 maxWidth: 'calc(100% - 40px)',
                                 pointerEvents: 'auto'
                             }}>
@@ -1478,12 +1636,13 @@
                                     boxShadow: '0 12px 28px rgba(0,0,0,0.2)',
                                     maxWidth: 460,
                                     position: 'relative',
-                                    display: 'flex', flexDirection: 'column', gap: 10
+                                    display: 'flex', flexDirection: 'column', gap: 10,
+                                    marginTop: 8
                                 }}>
-                                    {/* 말풍선 꼬리 (왼쪽으로 향함) */}
+                                    {/* 말풍선 꼬리 (왼쪽으로 향함, 위쪽 정렬) */}
                                     <div style={{
                                         position: 'absolute',
-                                        left: -16, bottom: 20,
+                                        left: -16, top: 20,
                                         width: 0, height: 0,
                                         borderTop: '10px solid transparent',
                                         borderBottom: '10px solid transparent',
@@ -1491,7 +1650,7 @@
                                     }} />
                                     <div style={{
                                         position: 'absolute',
-                                        left: -10, bottom: 22,
+                                        left: -10, top: 22,
                                         width: 0, height: 0,
                                         borderTop: '7px solid transparent',
                                         borderBottom: '7px solid transparent',
@@ -1881,8 +2040,8 @@
                             </p>
                         )}
 
-                        {/* 건너뛰기 버튼 (음성 인식이 안 될 때) */}
-                        {!voiceResult && !isRecording && (
+                        {/* 건너뛰기 버튼 (음성 인식이 안 될 때 - 녹음 시도 후에만 표시) */}
+                        {!voiceResult && !isRecording && recordingAttempted && (
                             <button
                                 onClick={() => {
                                     // 현재 단계를 오답으로 기록
@@ -2091,37 +2250,103 @@
                                             voiceStep === 'sino' ? '🌟 잘 읽었어요!' : '🌟 완벽해요!'
                                         ) : (
                                             <span>
-                                                {transcript && transcript.length < 15 ? (
-                                                    <><span style={{ color: '#64748b', fontSize: 32 }}>학생은 '<b style={{ color: '#dc2626' }}>{transcript}</b>'(이)라고 읽었네요!</span><br /></>
-                                                ) : null}
-                                                <span style={{ fontSize: 36, color: '#475569', lineHeight: 1.5, display: 'block', marginTop: 12 }}>
+                                                <span style={{ fontSize: 36, color: '#475569', lineHeight: 1.5, display: 'block' }}>
                                                     {(() => {
                                                         const tens = Math.floor(p.q / 10);
                                                         const units = p.q % 10;
                                                         const isSino = voiceStep === 'sino';
                                                         const highlightStyle = { background: 'linear-gradient(180deg,transparent 65%,#fde68a 0)', padding: '0 4px', fontWeight: 900, color: '#1e293b' };
-                                                        
-                                                        // 정답의 각 자리 읽기
+                                                        const exampleStyle = { background: '#dbeafe', color: '#1e40af', padding: '0 6px', borderRadius: 6, fontWeight: 900 };
+
+                                                        // 학생이 말한 내용 (한글만)
+                                                        const spoken = transcript.replace(/\s/g, '').replace(/[^가-힣]/g, '');
+
+                                                        // 정답 (현재 단계)
+                                                        const targetReading = isSino ? p.sinoReading : p.nativeReading;
+                                                        const oppositeReading = isSino ? p.nativeReading : p.sinoReading;
+                                                        const cleanTarget = targetReading.replace(/[^가-힣]/g, '');
+                                                        const cleanOpposite = oppositeReading.replace(/[^가-힣]/g, '');
+
+                                                        // 정답에 쓰인 십의 자리 숫자/낱개 (예시 만들 때 피할 값)
+                                                        // 십의 자리 예시: 정답의 tens와 다른 2개 선택
+                                                        const tensExamplePool = [1,2,3,4,5,6,7,8,9].filter(t => t !== tens);
+                                                        const tensEx = [tensExamplePool[0], tensExamplePool[1]];
+                                                        const tensExLabel = (t) => isSino
+                                                            ? <>{`${t*10}`}{'은 '}<span style={exampleStyle}>{`'${t === 1 ? '십' : S_ORDER[t-1]}'`}</span></>
+                                                            : <>{`${t*10}`}{'은 '}<span style={exampleStyle}>{`'${K_ORDER[t-1]}'`}</span></>;
+
+                                                        // 일의 자리 예시: 정답의 units와 다른 2개 선택 (1~9 중)
+                                                        const unitsExamplePool = [1,2,3,4,5,6,7,8,9].filter(u => u !== units);
+                                                        const unitsEx = [unitsExamplePool[0], unitsExamplePool[1]];
+                                                        const unitsExLabel = (u) => isSino
+                                                            ? <>{`${u}`}{'은 '}<span style={exampleStyle}>{`'${S_UNITS[u]}'`}</span></>
+                                                            : <>{`${u}`}{'은 '}<span style={exampleStyle}>{`'${K_UNITS[u]}'`}</span></>;
+
+                                                        // 케이스 1: 학생이 반대 단계 방법으로 읽은 경우 (정답은 알려주지 않음)
+                                                        if (spoken && spoken === cleanOpposite) {
+                                                            return <>
+                                                                {'학생은 '}<span style={highlightStyle}>{`'${spoken}'`}</span>{'(이)라고 읽었어요.'}<br />
+                                                                {'그건 '}<span style={highlightStyle}>{isSino ? '두 번째 방법' : '첫 번째 방법'}</span>{'이에요!'}<br />
+                                                                {isSino ? '첫 번째 방법' : '두 번째 방법'}{'으로 다시 읽어볼까요? 🤔'}
+                                                            </>;
+                                                        }
+
+                                                        // 정답의 각 자리 읽기 (피드백 판정용, 직접 노출하지 않음)
                                                         const tTens = isSino ? (tens === 1 ? '십' : S_ORDER[tens-1] + '십') : K_ORDER[tens-1];
                                                         const tUnits = isSino ? S_UNITS[units] : K_UNITS[units];
-                                                        
-                                                        const spoken = transcript.replace(/\s/g, '');
+
                                                         const tensMatch = tTens && spoken.includes(tTens);
                                                         const unitsMatch = tUnits && (units === 0 ? !spoken.match(/[일이삼사오육칠팔구]($|[^십])/) : spoken.includes(tUnits));
 
+                                                        // 케이스 2: 십의 자리만 맞음 → 일의 자리 다른 예시로 힌트
                                                         if (tensMatch && !unitsMatch) {
-                                                            return isSino 
-                                                                ? <>{'십의 자리 '}<span style={highlightStyle}>{`'${tens}0'`}</span>{'을(를) '}<span style={highlightStyle}>{`'${tTens}'`}</span>{'(으)로 아주 잘 읽었어요!'}<br />{'일의 자리 '}<span style={highlightStyle}>{`'${units}'`}</span>{'(낱개)은 어떻게 읽어야 할까요?'}</>
-                                                                : <>{'십의 자리 '}<span style={highlightStyle}>{`'${tens === 1 ? '십' : S_ORDER[tens-1] + '십'}'`}</span>{'을(를) '}<span style={highlightStyle}>{`'${tTens}'`}</span>{'(으)로 정확하게 바꿨어요!'}<br />{'일의 자리 '}<span style={highlightStyle}>{`'${units}'`}</span>{'(낱개)은 우리말로 무엇일까요?'}</>;
-                                                        } else if (!tensMatch && unitsMatch && tens > 0) {
-                                                            return isSino
-                                                                ? <>{'일의 자리 '}<span style={highlightStyle}>{`'${units}'`}</span>{'을(를) '}<span style={highlightStyle}>{`'${tUnits}'`}</span>{'(으)로 잘 읽었어요!'}<br />{'십의 자리 '}<span style={highlightStyle}>{`'${tens}0'`}</span>{'은 어떻게 읽어야 할까요?'}</>
-                                                                : <>{'일의 자리 '}<span style={highlightStyle}>{`'${S_UNITS[units]}'`}</span>{'을(를) '}<span style={highlightStyle}>{`'${tUnits}'`}</span>{'(으)로 잘 읽었어요!'}<br />{'십의 자리 '}<span style={highlightStyle}>{`'${tens === 1 ? '십' : S_ORDER[tens-1] + '십'}'`}</span>{'은 우리말로 무엇일까요?'}</>;
-                                                        } else {
-                                                            return isSino
-                                                                ? <>{'수 모형을 다시 볼까요?'}<br />{'십 모형은 '}<span style={highlightStyle}>{`${tens}개`}</span>{', 낱개는 '}<span style={highlightStyle}>{`${units}개`}</span>{'예요.'}<br />{'천천히 다시 읽어보세요.'}</>
-                                                                : <>{'첫 번째 방법 '}<span style={highlightStyle}>{`'${p.sinoReading}'`}</span>{'을(를)'}<br />{'두 번째 방법으로 바꿔보세요.'}<br />{'십의 자리는 '}<span style={highlightStyle}>{`'${K_ORDER[tens-1]}...'`}</span>{', 일의 자리는 '}<span style={highlightStyle}>{`'${K_UNITS[units]}...'`}</span>{' 중 무엇일까요?'}</>;
+                                                            return <>
+                                                                {spoken && <>{'학생은 '}<span style={highlightStyle}>{`'${spoken}'`}</span>{'(이)라고 읽었어요.'}<br /></>}
+                                                                {'십의 자리 '}<span style={highlightStyle}>{`'${tTens}'`}</span>{'은(는) 잘 읽었어요! 👍'}<br />
+                                                                {'일의 자리는 어떻게 읽을까요?'}<br />
+                                                                <span style={{ fontSize: 28 }}>{'예: '}{unitsExLabel(unitsEx[0])}{', '}{unitsExLabel(unitsEx[1])}</span>
+                                                            </>;
                                                         }
+                                                        // 케이스 3: 일의 자리만 맞음 → 십의 자리 다른 예시로 힌트
+                                                        if (!tensMatch && unitsMatch && tens > 0) {
+                                                            return <>
+                                                                {spoken && <>{'학생은 '}<span style={highlightStyle}>{`'${spoken}'`}</span>{'(이)라고 읽었어요.'}<br /></>}
+                                                                {'일의 자리 '}<span style={highlightStyle}>{`'${tUnits}'`}</span>{'은(는) 잘 읽었어요! 👍'}<br />
+                                                                {'십의 자리는 어떻게 읽을까요?'}<br />
+                                                                <span style={{ fontSize: 28 }}>{'예: '}{tensExLabel(tensEx[0])}{', '}{tensExLabel(tensEx[1])}</span>
+                                                            </>;
+                                                        }
+
+                                                        // 케이스 4: 두 가지 방법이 섞인 경우
+                                                        const oppTens = isSino ? K_ORDER[tens-1] : (tens === 1 ? '십' : S_ORDER[tens-1] + '십');
+                                                        const oppUnits = isSino ? K_UNITS[units] : S_UNITS[units];
+                                                        const spokeOppTens = oppTens && spoken.includes(oppTens);
+                                                        const spokeOppUnits = oppUnits && spoken.includes(oppUnits);
+
+                                                        if (spokeOppTens || spokeOppUnits) {
+                                                            return <>
+                                                                {spoken && <>{'학생은 '}<span style={highlightStyle}>{`'${spoken}'`}</span>{'(이)라고 읽었어요.'}<br /></>}
+                                                                {'두 가지 방법이 섞였네요. 😅'}<br />
+                                                                <span style={{ fontSize: 28 }}>
+                                                                    {isSino
+                                                                        ? <>{'한 가지 방법으로만 읽어볼까요?'}<br />{'예: '}{tensExLabel(tensEx[0])}{', '}{unitsExLabel(unitsEx[0])}</>
+                                                                        : <>{'한 가지 방법으로만 읽어볼까요?'}<br />{'예: '}{tensExLabel(tensEx[0])}{', '}{unitsExLabel(unitsEx[0])}</>
+                                                                    }
+                                                                </span>
+                                                            </>;
+                                                        }
+
+                                                        // 케이스 5: 그 외 (인식 실패 또는 전혀 다른 읽기)
+                                                        return <>
+                                                            {spoken
+                                                                ? <>{'학생은 '}<span style={highlightStyle}>{`'${spoken}'`}</span>{'(이)라고 읽었어요.'}<br /></>
+                                                                : <>{'잘 들리지 않았어요. 😅'}<br /></>
+                                                            }
+                                                            {'천천히 다시 읽어볼까요?'}<br />
+                                                            <span style={{ fontSize: 28 }}>
+                                                                {'예: '}{tensExLabel(tensEx[0])}{', '}{unitsExLabel(unitsEx[0])}
+                                                            </span>
+                                                        </>;
                                                     })()}
                                                 </span>
                                             </span>
@@ -2539,7 +2764,16 @@
                                     <div style={{ display: 'flex', gap: 16 }}>
                                         {wrong.length > 0 && (
                                             <button className="confirm-btn" onClick={() => {
-                                                const firstWrong = wrong[0];
+                                                // 3단계의 경우: 한 숫자 q의 digit/read 중 하나만 틀려도 두 문제(짝)를 함께 다시 풀도록
+                                                let expandedWrong = wrong;
+                                                if (phase === 3) {
+                                                    const allP3 = allProbs[3] || [];
+                                                    const wrongQs = new Set(wrong.map(w => w.q));
+                                                    // 틀린 q값에 해당하는 모든 문제(digit + read)를 원래 순서대로 가져옴
+                                                    expandedWrong = allP3.filter(prb => wrongQs.has(prb.q));
+                                                }
+                                                const firstWrong = expandedWrong[0];
+                                                setWrong(expandedWrong);
                                                 setReviewMode(true);
                                                 setStamp(false);
                                                 setProbIdx(0);
