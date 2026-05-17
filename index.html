@@ -231,7 +231,7 @@
         const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyfTQR2kWfeFRGgEOF2kb67XuU7VynO8wrd_NbfWlCojyCbzVi6Qu7XqDITFAKXJMQ/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxW25K14-LmcZAIr1fFVx_BXprXsJ1iGhuMJ_N5j9RvDmGoXTAcnmLHBWYJFxbxyWJM/exec";
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -1610,10 +1610,10 @@
                                 {tutorial === 4 ? renderMiniVoiceView() : renderMiniStudentView()}
                             </div>
 
-                            {/* 🦊 여우 + 말풍선 (떠있는 팝업) */}
+                            {/* 🦊 여우 + 말풍선 (떠있는 팝업, 상단 바 바로 아래) */}
                             <div className="pop-in" key={tutorialStep} style={{
                                 position: 'absolute',
-                                top: 70, left: 20,
+                                top: 60, left: 20,
                                 zIndex: 5,
                                 display: 'flex', alignItems: 'flex-start', gap: 12,
                                 maxWidth: 'calc(100% - 40px)',
