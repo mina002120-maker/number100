@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!-- ================================================================
+     ★ GAS 웹 앱 URL을 아래에 입력하세요 ★
+     GAS_URL: https://script.google.com/macros/s/AKfycbxl1BQkTi5r8WakfbiJXc_Ji8IrVP6VVkuV_k8Q4K2yD44yUFs3V0H5Rz1oCrDDJt97/exec
+     ================================================================ -->
 <html lang="ko">
 
 <head>
@@ -228,10 +232,14 @@
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect, useCallback, useMemo, useRef } = React;
+        /* ================================================================
+         * ★ 여기에 구글 앱스크립트 웹 앱 URL을 입력하세요 ★
+         * GAS 배포 후 받은 URL을 아래에 붙여넣기 하세요.
+         * ================================================================ */
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxl1BQkTi5r8WakfbiJXc_Ji8IrVP6VVkuV_k8Q4K2yD44yUFs3V0H5Rz1oCrDDJt97/exec";
+        /* ================================================================ */
 
-        // 구글 앱스크립트 웹 앱 URL (배포 후 받은 URL로 교체하세요)
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxW25K14-LmcZAIr1fFVx_BXprXsJ1iGhuMJ_N5j9RvDmGoXTAcnmLHBWYJFxbxyWJM/exec";
+        const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
         /**
          * 외부에서 구글 앱스크립트 함수를 호출하기 위한 통신 함수 (JSONP 방식)
@@ -320,14 +328,24 @@
                     hint: '십 모형이 3개예요.'
                 },
                 steps: [
-                    { target: 'question', message: '보라색 십 모형이 몇 개 있나요?\n3개가 있네요! 🟪', action: 'next' },
+                    // 1. 문제 보기
+                    { target: 'question', message: '보라색 십 모형이 몇 개 있나요? 3개가 있네요! 🟪', action: 'next' },
+                    // 2. 삼십 선택
                     { target: 'card-삼십', message: '\'삼십\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '삼십', expectedIdx: 0 },
-                    // 일부러 잘못된 카드 누르게 해서 수정 연습
-                    { target: 'card-마흔', message: '잘했어요! 그런데 두 번째 카드는...\n일부러 \'마흔\'을 눌러볼까요? 👇', action: 'click', expectedValue: '마흔', expectedIdx: 1 },
-                    { target: 'reset', message: '앗! \'마흔\'은 30과 달라요. 😅\n\'수정\' 버튼을 눌러서 지워볼까요? ↩', action: 'click' },
-                    { target: 'card-서른', message: '잘했어요! 이번엔 \'서른\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '서른', expectedIdx: 1 },
-                    { target: 'submit', message: '두 칸을 모두 채웠어요!\n이제 \'정답\' 버튼을 눌러보세요! ✅', action: 'click' },
-                    { target: 'center', message: '참 잘했어요! 🎉\n\'수정\' 버튼은 답을 바꾸고 싶을 때\n언제든 사용할 수 있어요!', action: 'finish' }
+                    // 3. 일부러 틀린 카드 선택
+                    { target: 'card-아흔', message: '잘했어요! 두 번째는 일부러 \'아흔\'을 눌러볼까요? 👇', action: 'click', expectedValue: '아흔', expectedIdx: 1 },
+                    // 4. 카드 재클릭으로 한 칸 수정
+                    { target: 'card-서른', message: '\'아흔\'이 아닌 \'서른\'이에요! 카드를 다시 누르면 하나만 바뀌어요. \'서른\'을 눌러보세요! 👇', action: 'click', expectedValue: '서른', expectedIdx: 1 },
+                    // 5. 수정 버튼으로 전체 초기화 연습
+                    { target: 'reset', message: '\'수정\' 버튼을 누르면 전체를 지울 수 있어요! 눌러볼까요? ↩', action: 'click', resetIdx: null },
+                    // 6. 삼십 다시 선택
+                    { target: 'card-삼십', message: '다시 해봐요! \'삼십\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '삼십', expectedIdx: 0 },
+                    // 7. 서른 다시 선택
+                    { target: 'card-서른', message: '잘했어요! \'서른\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '서른', expectedIdx: 1 },
+                    // 8. 정답
+                    { target: 'submit', message: '두 칸을 모두 채웠어요! 정답 버튼을 눌러보세요! ✅', action: 'click' },
+                    // 9. 완료
+                    { target: 'center', message: '참 잘했어요! 🎉 이제 진짜 문제를 풀어볼까요?', action: 'finish' }
                 ]
             },
             2: {
@@ -1002,19 +1020,21 @@
                                 bestText = cleanPrimary || primaryClean;
                             }
                         }
-                        // CASE B: 숫자가 인식된 경우 - 양방향 변환 후 비교
+                        // CASE B: 숫자가 인식된 경우 - 정답 단계 방향으로만 변환 후 비교
+                        // 단, 반대 단계 읽기로도 동일하게 매치되면 어느 방법인지 불분명하므로 오답 처리
                         else {
-                            // 현재 단계 형식으로 변환한 것이 정답과 일치하면 정답
                             const currentForm = voiceStep === 'sino' ? cleanSino : cleanNative;
-                            if (currentForm.length >= 2 && currentForm === cleanTarget) {
+                            const oppositeForm = voiceStep === 'sino' ? cleanNative : cleanSino;
+
+                            if (currentForm.length >= 2 && currentForm === cleanTarget
+                                && !(oppositeForm.length >= 2 && oppositeForm === cleanOpposite)) {
+                                // 현재 단계 읽기와만 일치 → 정답
                                 matched = true;
                                 bestText = currentForm;
                             } else {
                                 matched = false;
-                                // 사용자가 반대 단계로 읽었는지 확인 (피드백용)
-                                const oppositeForm = voiceStep === 'sino' ? cleanNative : cleanSino;
+                                // 반대 단계로 읽었는지 확인 (피드백용)
                                 if (oppositeForm.length >= 2 && oppositeForm === cleanOpposite) {
-                                    // 반대 단계로 읽음 - 학생이 실제로 발화한 형태로 표시
                                     bestText = oppositeForm;
                                 } else {
                                     bestText = currentForm || primaryClean;
@@ -1202,7 +1222,15 @@
                 // 수정 버튼 클릭 처리 (튜토리얼 내부용)
                 const onTutorialReset = () => {
                     if (currentStep.action === 'click' && currentStep.target === 'reset') {
-                        setDrops(new Array(tutP?.ans.length || 2).fill(null));
+                        if (currentStep.resetIdx !== undefined && currentStep.resetIdx !== null) {
+                            // 특정 칸만 지우기 (다른 칸은 유지)
+                            const next = [...drops];
+                            next[currentStep.resetIdx] = null;
+                            setDrops(next);
+                        } else {
+                            // 전체 초기화
+                            setDrops(new Array(tutP?.ans.length || 2).fill(null));
+                        }
                         setTimeout(() => setTutorialStep(tutorialStep + 1), 300);
                     }
                 };
@@ -1634,7 +1662,6 @@
                                     borderRadius: 24,
                                     border: '4px solid #3b82f6',
                                     boxShadow: '0 12px 28px rgba(0,0,0,0.2)',
-                                    maxWidth: 460,
                                     position: 'relative',
                                     display: 'flex', flexDirection: 'column', gap: 10,
                                     marginTop: 8
@@ -1658,10 +1685,10 @@
                                     }} />
 
                                     <p style={{
-                                        fontSize: 18, fontWeight: 900, color: '#1e293b',
+                                        fontSize: 26, fontWeight: 900, color: '#1e293b',
                                         lineHeight: 1.5, margin: 0,
-                                        whiteSpace: 'pre-line'
-                                    }}>{currentStep.message}</p>
+                                        whiteSpace: 'nowrap'
+                                    }}>{currentStep.message.replace(/\n/g, ' ')}</p>
 
                                     {/* 다음/시작 버튼 */}
                                     {isNextAction && (
@@ -2364,6 +2391,57 @@
                                                 setVoiceResult(null);
                                             }} className="main-btn" style={{ flex: 1, padding: '20px', background: '#f97316', color: 'white', borderRadius: 24, fontSize: 28, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(249,115,22,0.3)' }}>
                                                 🔄 다시 해보기
+                                            </button>
+                                        )}
+                                        {voiceResult === 'wrong' && (
+                                            <button onClick={() => {
+                                                if (!reviewMode && !wrong.find(w => w.id === p.id)) {
+                                                    setWrong(pr => [...pr, p]);
+                                                }
+                                                sendGasData('saveVoiceRecord', {
+                                                    studentNum: currentUser?.num,
+                                                    studentName: currentUser?.name,
+                                                    totalCount: problems.length,
+                                                    probIndex: probIdx + 1,
+                                                    voiceStep: voiceStep,
+                                                    transcribed: '(건너뜀)',
+                                                    isCorrect: '오답',
+                                                    sessionId: sessionId
+                                                });
+                                                setTranscript('');
+                                                setVoiceResult(null);
+                                                setVoiceStep('sino');
+                                                if (probIdx < problems.length - 1) {
+                                                    setProbIdx(probIdx + 1);
+                                                } else {
+                                                    if (reviewMode) { setReviewMode(false); setWrong([]); setStep('map'); }
+                                                    else {
+                                                        setStamp(true);
+                                                        if (!completed.includes(phase)) setCompleted(pr => [...pr, phase]);
+                                                        if (currentUser) {
+                                                            const allWrong = wrong.find(w => w.id === p.id) ? wrong : [...wrong, p];
+                                                            const correctItems = problems.filter(pr => !allWrong.find(w => w.id === pr.id)).map(pr => pr.q).join(', ');
+                                                            const wrongItems = allWrong.map(pr => pr.q).join(', ');
+                                                            const rate = Math.round(((problems.length - allWrong.length) / problems.length) * 100) + '%';
+                                                            sendGasData('saveActivity', {
+                                                                stageNum: phase,
+                                                                studentNum: currentUser.num,
+                                                                studentName: currentUser.name,
+                                                                rate: rate,
+                                                                correctList: correctItems,
+                                                                wrongList: wrongItems
+                                                            });
+                                                        }
+                                                    }
+                                                }
+                                            }} style={{
+                                                padding: '20px 28px', background: 'white', color: '#94a3b8',
+                                                borderRadius: 24, fontSize: 24, fontWeight: 700,
+                                                border: '2px dashed #cbd5e1', cursor: 'pointer',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                                                display: 'flex', alignItems: 'center', gap: 6
+                                            }}>
+                                                ⏭️ 건너뛰기
                                             </button>
                                         )}
                                         {voiceResult === 'correct' && voiceStep === 'sino' && (
