@@ -4,7 +4,7 @@
 <head>
     <!-- ★ GAS 웹 앱 URL: 아래 GAS_WEB_APP_URL 값을 수정하세요 ★ -->
     <script>
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby0nTsOCGeoqRoDfkkkaEGL2Y-mxm2Gbl40MTEog_Z559RwFOU8043v4m5BtcE1tQDH/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyh2o3rThWpwIv20jhlkpk1UY1-GdzN-WOGxWOW03cM-Mnu8_ZO9ALKJvnRJwRi159H/exec";
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1020,9 +1020,8 @@
                             const currentForm = voiceStep === 'sino' ? cleanSino : cleanNative;
                             const oppositeForm = voiceStep === 'sino' ? cleanNative : cleanSino;
 
-                            if (currentForm.length >= 2 && currentForm === cleanTarget
-                                && !(oppositeForm.length >= 2 && oppositeForm === cleanOpposite)) {
-                                // 현재 단계 읽기와만 일치 → 정답
+                            // 현재 단계 형식으로 변환한 결과가 정답과 일치하면 정답
+                            if (currentForm.length >= 2 && currentForm === cleanTarget) {
                                 matched = true;
                                 bestText = currentForm;
                             } else {
@@ -2089,7 +2088,7 @@
                                             onClick={startRecording}
                                             disabled={isRecording}
                                             style={{
-                                                padding: '18px 48px',
+                                                padding: '16px 32px', whiteSpace: 'nowrap',
                                                 background: isRecording ? '#ef4444' : '#22c55e',
                                                 color: 'white', borderRadius: 999, fontSize: 28, fontWeight: 900,
                                                 border: 'none', cursor: isRecording ? 'not-allowed' : 'pointer',
@@ -2155,7 +2154,7 @@
                                             onClick={startRecording}
                                             disabled={isRecording}
                                             style={{
-                                                padding: '18px 48px',
+                                                padding: '16px 32px', whiteSpace: 'nowrap',
                                                 background: isRecording ? '#ef4444' : '#22c55e',
                                                 color: 'white', borderRadius: 999, fontSize: 28, fontWeight: 900,
                                                 border: 'none', cursor: isRecording ? 'not-allowed' : 'pointer',
