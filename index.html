@@ -4,7 +4,7 @@
 <head>
     <!-- ★ GAS 웹 앱 URL: 아래 GAS_WEB_APP_URL 값을 수정하세요 ★ -->
     <script>
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyBNUCBHn5AHofU7QmKSlW89-PNn7T-tmGaLpyYLg3uJilylzqjxkYClGLSrx1lXCaU/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzkDh4ToZcEjFWDsb62QQegxjgEN3wSyAG8iQMXZpyHuRr3-Nzu6FOlNLfKgyayuCE/exec";
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -662,6 +662,7 @@
             const [voiceStep, setVoiceStep] = useState('sino'); // 'sino' | 'native'
             const [showHint, setShowHint] = useState(false);
             const [recordingAttempted, setRecordingAttempted] = useState(false); // 녹음 시도 여부
+            const [sinoSpokenRaw, setSinoSpokenRaw] = useState(''); // sino 단계에서 인식된 원본 텍스트 (native 단계 비교용)
             const [allProbs, setAllProbs] = useState(() => buildProblems());
             const [showConfig4, setShowConfig4] = useState(false);
             const [sessionId, setSessionId] = useState('');
@@ -747,6 +748,7 @@
                 setIsRecording(false);
                 setShowHint(false);
                 setRecordingAttempted(false);  // 새 문제에서는 녹음 시도 초기화
+                setSinoSpokenRaw('');  // sino 발화 텍스트도 초기화
                 if (recogRef.current) {
                     try { recogRef.current.abort(); } catch (e) { }
                     recogRef.current = null;
@@ -995,21 +997,29 @@
 
                         const cleanTarget = targetReading.replace(/[^가-힣]/g, '');
                         const cleanOpposite = oppositeReading.replace(/[^가-힣]/g, '');
+                        const cleanSinoReading = p.sinoReading.replace(/[^가-힣]/g, '');
+                        const cleanNativeReading = p.nativeReading.replace(/[^가-힣]/g, '');
 
-                        // ★ alternatives 중 한글 발음을 찾아서 학생의 실제 발음 추정
-                        // sino/native 정답 중 하나와 일치하는 한글 alternative가 있으면 그것이 학생의 실제 발음
+                        // ★ alternatives 순위 기반 발음 추정
+                        // sino/native 정답이 alternatives에 있으면 가장 앞에 있는(신뢰도 높은) 것이 학생 발음
                         let actualSpeech = null; // 'sino' | 'native' | null
                         let spokenText = '';
-                        for (const alt of allAlternatives) {
+                        let sinoIdx = -1, nativeIdx = -1;
+                        allAlternatives.forEach((alt, idx) => {
                             const cleanAlt = alt.replace(/[^가-힣]/g, '');
                             if (cleanAlt.length >= 2) {
-                                if (cleanAlt === p.sinoReading.replace(/[^가-힣]/g, '')) {
-                                    actualSpeech = 'sino'; spokenText = cleanAlt; break;
-                                }
-                                if (cleanAlt === p.nativeReading.replace(/[^가-힣]/g, '')) {
-                                    actualSpeech = 'native'; spokenText = cleanAlt; break;
-                                }
+                                if (sinoIdx === -1 && cleanAlt === cleanSinoReading) sinoIdx = idx;
+                                if (nativeIdx === -1 && cleanAlt === cleanNativeReading) nativeIdx = idx;
                             }
+                        });
+                        if (sinoIdx !== -1 && nativeIdx !== -1) {
+                            // 둘 다 있으면 앞 순위가 학생 발음
+                            actualSpeech = sinoIdx < nativeIdx ? 'sino' : 'native';
+                            spokenText = sinoIdx < nativeIdx ? cleanSinoReading : cleanNativeReading;
+                        } else if (sinoIdx !== -1) {
+                            actualSpeech = 'sino'; spokenText = cleanSinoReading;
+                        } else if (nativeIdx !== -1) {
+                            actualSpeech = 'native'; spokenText = cleanNativeReading;
                         }
 
                         // 숫자 변환 (피드백/표시용)
@@ -1070,6 +1080,23 @@
                                     bestText = currentForm || primaryClean;
                                 }
                             }
+                        }
+
+                        // ★ 세션 안전장치: 같은 문제의 sino 단계에서 인식된 텍스트와 native 단계에서 인식된 텍스트가 같으면
+                        // 학생이 두 번 다 같은 방법으로 말한 것 → native 단계는 오답 처리
+                        // (예: sino에서 "오십구"→59 정답 처리되고, native에서도 "오십구"라고 말해 59가 인식되면 오답)
+                        if (matched && voiceStep === 'native' && sinoSpokenRaw) {
+                            // primaryClean과 sinoSpokenRaw가 같으면 = 두 번 다 같은 발음
+                            if (primaryClean === sinoSpokenRaw || cleanPrimary === sinoSpokenRaw.replace(/[^가-힣]/g, '')) {
+                                matched = false;
+                                // 학생이 sino를 두 번 말한 것으로 추정 → bestText를 sinoReading으로
+                                bestText = p.sinoReading;
+                            }
+                        }
+
+                        // sino 단계 정답 시 발화 원본 저장 (다음 native 단계 안전장치용)
+                        if (matched && voiceStep === 'sino') {
+                            setSinoSpokenRaw(primaryClean);
                         }
 
                         setInterimTranscript('');
