@@ -4,7 +4,7 @@
 <head>
     <!-- ★ GAS 웹 앱 URL: 아래 GAS_WEB_APP_URL 값을 수정하세요 ★ -->
     <script>
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyh2o3rThWpwIv20jhlkpk1UY1-GdzN-WOGxWOW03cM-Mnu8_ZO9ALKJvnRJwRi159H/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyBNUCBHn5AHofU7QmKSlW89-PNn7T-tmGaLpyYLg3uJilylzqjxkYClGLSrx1lXCaU/exec";
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -226,6 +226,11 @@
                 box-shadow: 0 0 0 10px rgba(250,204,21,0.5), 0 14px 40px rgba(250,204,21,0.7);
             }
         }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
     </style>
 </head>
 
@@ -322,23 +327,23 @@
                 },
                 steps: [
                     // 1. 문제 보기
-                    { target: 'question', message: '보라색 십 모형이 몇 개 있나요? 3개가 있네요! 🟪', action: 'next' },
+                    { target: 'question', message: '보라색 십 모형이 몇 개 있나요?\n3개가 있네요! 🟪', action: 'next' },
                     // 2. 삼십 선택
                     { target: 'card-삼십', message: '\'삼십\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '삼십', expectedIdx: 0 },
                     // 3. 일부러 틀린 카드 선택
-                    { target: 'card-아흔', message: '잘했어요! 두 번째는 일부러 \'아흔\'을 눌러볼까요? 👇', action: 'click', expectedValue: '아흔', expectedIdx: 1 },
+                    { target: 'card-아흔', message: '잘했어요!\n두 번째는 일부러 \'아흔\'을 눌러볼까요? 👇', action: 'click', expectedValue: '아흔', expectedIdx: 1 },
                     // 4. 카드 재클릭으로 한 칸 수정
-                    { target: 'card-서른', message: '\'아흔\'이 아닌 \'서른\'이에요! 카드를 다시 누르면 하나만 바뀌어요. \'서른\'을 눌러보세요! 👇', action: 'click', expectedValue: '서른', expectedIdx: 1 },
+                    { target: 'card-서른', message: '\'아흔\'이 아닌 \'서른\'이에요!\n카드를 다시 누르면 하나만 바뀌어요.\n\'서른\'을 눌러보세요! 👇', action: 'click', expectedValue: '서른', expectedIdx: 1 },
                     // 5. 수정 버튼으로 전체 초기화 연습
-                    { target: 'reset', message: '\'수정\' 버튼을 누르면 전체를 지울 수 있어요! 눌러볼까요? ↩', action: 'click', resetIdx: null },
+                    { target: 'reset', message: '\'수정\' 버튼을 누르면\n전체를 지울 수 있어요! 눌러볼까요? ↩', action: 'click', resetIdx: null },
                     // 6. 삼십 다시 선택
-                    { target: 'card-삼십', message: '다시 해봐요! \'삼십\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '삼십', expectedIdx: 0 },
+                    { target: 'card-삼십', message: '다시 해봐요!\n\'삼십\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '삼십', expectedIdx: 0 },
                     // 7. 서른 다시 선택
-                    { target: 'card-서른', message: '잘했어요! \'서른\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '서른', expectedIdx: 1 },
+                    { target: 'card-서른', message: '잘했어요!\n\'서른\' 카드를 눌러보세요! 👇', action: 'click', expectedValue: '서른', expectedIdx: 1 },
                     // 8. 정답
-                    { target: 'submit', message: '두 칸을 모두 채웠어요! 정답 버튼을 눌러보세요! ✅', action: 'click' },
+                    { target: 'submit', message: '두 칸을 모두 채웠어요!\n정답 버튼을 눌러보세요! ✅', action: 'click' },
                     // 9. 완료
-                    { target: 'center', message: '참 잘했어요! 🎉 이제 진짜 문제를 풀어볼까요?', action: 'finish' }
+                    { target: 'center', message: '참 잘했어요! 🎉\n이제 진짜 문제를 풀어볼까요?', action: 'finish' }
                 ]
             },
             2: {
@@ -660,6 +665,10 @@
             const [allProbs, setAllProbs] = useState(() => buildProblems());
             const [showConfig4, setShowConfig4] = useState(false);
             const [sessionId, setSessionId] = useState('');
+            const [showStatsSidebar, setShowStatsSidebar] = useState(false);  // 통계 사이드바 표시 여부
+            const [statsData, setStatsData] = useState(null);  // 통계 데이터
+            const [statsLoading, setStatsLoading] = useState(false);
+            const [statsTab, setStatsTab] = useState('summary');  // 'summary' | '1단계' | '2단계' | '3단계' | '4단계' | 'voice'
             const [tutorial, setTutorial] = useState(null);  // 현재 표시 중인 튜토리얼 단계 번호 (null이면 안 보임)
             const [tutorialStep, setTutorialStep] = useState(0);  // 튜토리얼 내부 진행 단계
             const [seenTutorials, setSeenTutorials] = useState([]);  // 이미 본 단계 (한 세션에서 한 번만)
@@ -969,36 +978,66 @@
 
                     // 최종 결과 처리
                     if (finalText) {
-                        // 가장 신뢰도 높은 첫 번째 결과만 사용 (alternatives 전체 사용 시 오인식 발생)
+                        // 가장 신뢰도 높은 첫 번째 결과
                         const primaryRaw = event.results[event.results.length - 1][0].transcript;
                         const primaryClean = primaryRaw.replace(/\s/g, '').replace(/[.,!?~]/g, '');
+
+                        // 모든 alternatives 수집 - 학생이 실제로 어떻게 발음했는지 파악용
+                        const allAlternatives = [];
+                        for (let i = 0; i < event.results[event.results.length - 1].length; i++) {
+                            const altText = event.results[event.results.length - 1][i].transcript
+                                .replace(/\s/g, '').replace(/[.,!?~]/g, '');
+                            allAlternatives.push(altText);
+                        }
 
                         const targetReading = voiceStep === 'sino' ? p.sinoReading : p.nativeReading;
                         const oppositeReading = voiceStep === 'sino' ? p.nativeReading : p.sinoReading;
 
-                        // 숫자가 인식된 경우 양방향 변환을 모두 시도해서 어느 쪽과 매치되는지 확인
-                        // (인식기가 "72"를 반환했을 때, 사용자가 "칠십이"를 말했을 수도, "일흔둘"을 말했을 수도 있음)
+                        const cleanTarget = targetReading.replace(/[^가-힣]/g, '');
+                        const cleanOpposite = oppositeReading.replace(/[^가-힣]/g, '');
+
+                        // ★ alternatives 중 한글 발음을 찾아서 학생의 실제 발음 추정
+                        // sino/native 정답 중 하나와 일치하는 한글 alternative가 있으면 그것이 학생의 실제 발음
+                        let actualSpeech = null; // 'sino' | 'native' | null
+                        let spokenText = '';
+                        for (const alt of allAlternatives) {
+                            const cleanAlt = alt.replace(/[^가-힣]/g, '');
+                            if (cleanAlt.length >= 2) {
+                                if (cleanAlt === p.sinoReading.replace(/[^가-힣]/g, '')) {
+                                    actualSpeech = 'sino'; spokenText = cleanAlt; break;
+                                }
+                                if (cleanAlt === p.nativeReading.replace(/[^가-힣]/g, '')) {
+                                    actualSpeech = 'native'; spokenText = cleanAlt; break;
+                                }
+                            }
+                        }
+
+                        // 숫자 변환 (피드백/표시용)
                         let primarySinoForm = primaryClean;
                         let primaryNativeForm = primaryClean;
                         if (/[0-9]/.test(primaryClean)) {
                             primarySinoForm = convertDigitsToSino(primaryClean);
                             primaryNativeForm = convertDigitsToNative(primaryClean);
                         }
-
-                        // 한글만 추출하여 비교
                         const cleanSino = primarySinoForm.replace(/[^가-힣]/g, '');
                         const cleanNative = primaryNativeForm.replace(/[^가-힣]/g, '');
-                        const cleanTarget = targetReading.replace(/[^가-힣]/g, '');
-                        const cleanOpposite = oppositeReading.replace(/[^가-힣]/g, '');
-
-                        // 비교 대상: 사용자가 숫자가 아닌 한글로 직접 말한 경우 그대로 사용
                         const cleanPrimary = primaryClean.replace(/[^가-힣]/g, '');
 
                         let matched = false;
                         let bestText = primaryClean;
 
+                        // ★ 최우선: alternatives에서 학생의 실제 발음을 식별한 경우
+                        if (actualSpeech) {
+                            if (actualSpeech === voiceStep) {
+                                matched = true;
+                                bestText = spokenText;
+                            } else {
+                                matched = false;
+                                bestText = spokenText;
+                            }
+                        }
                         // CASE A: 사용자가 한글로 직접 말한 경우 (숫자 없음)
-                        if (!/[0-9]/.test(primaryClean)) {
+                        else if (!/[0-9]/.test(primaryClean)) {
                             // 정답과 정확히 일치
                             if (cleanPrimary.length >= 2 && cleanPrimary === cleanTarget) {
                                 matched = true;
@@ -1014,19 +1053,17 @@
                                 bestText = cleanPrimary || primaryClean;
                             }
                         }
-                        // CASE B: 숫자가 인식된 경우 - 정답 단계 방향으로만 변환 후 비교
-                        // 단, 반대 단계 읽기로도 동일하게 매치되면 어느 방법인지 불분명하므로 오답 처리
+                        // CASE B: 숫자만 인식되고 alternatives에도 한글 단서가 없는 경우
+                        // (학생이 어느 방법으로 말했는지 알 수 없으므로 현재 단계 변환으로 정답 처리)
                         else {
                             const currentForm = voiceStep === 'sino' ? cleanSino : cleanNative;
                             const oppositeForm = voiceStep === 'sino' ? cleanNative : cleanSino;
 
-                            // 현재 단계 형식으로 변환한 결과가 정답과 일치하면 정답
                             if (currentForm.length >= 2 && currentForm === cleanTarget) {
                                 matched = true;
                                 bestText = currentForm;
                             } else {
                                 matched = false;
-                                // 반대 단계로 읽었는지 확인 (피드백용)
                                 if (oppositeForm.length >= 2 && oppositeForm === cleanOpposite) {
                                     bestText = oppositeForm;
                                 } else {
@@ -1141,6 +1178,222 @@
                         setSeenTutorials(prev => [...prev, id]);
                     }
                 }
+            };
+
+            // 통계 데이터 로드
+            const loadStatistics = async () => {
+                setStatsLoading(true);
+                try {
+                    const data = await callGas('getStatistics');
+                    setStatsData(data || { stages: {}, voice: [], summaryList: [] });
+                } catch (e) {
+                    console.error('통계 로드 실패:', e);
+                    setStatsData({ stages: {}, voice: [], summaryList: [] });
+                } finally {
+                    setStatsLoading(false);
+                }
+            };
+
+            // 사이드바 열 때 통계 자동 로드
+            useEffect(() => {
+                if (showStatsSidebar && !statsData) loadStatistics();
+            }, [showStatsSidebar]);
+
+            // 학습 통계 사이드바 렌더
+            const renderStatsSidebar = () => {
+                if (!showStatsSidebar) return null;
+
+                const stages = statsData?.stages || {};
+                const voice = statsData?.voice || [];
+                const summary = statsData?.summaryList || [];
+
+                // 정답률 색상
+                const rateColor = (r) => {
+                    const v = parseInt(String(r || '0').replace('%','')) || 0;
+                    if (v >= 60) return { bg: '#dcfce7', text: '#166534' };
+                    if (v > 30) return { bg: '#fef9c3', text: '#854d0e' };
+                    return { bg: '#fee2e2', text: '#991b1b' };
+                };
+
+                const renderTable = (records, hasContent) => {
+                    if (!records || records.length === 0) {
+                        return <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 16 }}>아직 학습 기록이 없어요.</div>;
+                    }
+                    return (
+                        <div style={{ overflow: 'auto', flex: 1 }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                                <thead style={{ position: 'sticky', top: 0, background: '#f0fdf4', zIndex: 1 }}>
+                                    <tr>
+                                        <th style={{ padding: 8, borderBottom: '2px solid #bbf7d0', textAlign: 'left', fontWeight: 900, color: '#166534' }}>번호</th>
+                                        <th style={{ padding: 8, borderBottom: '2px solid #bbf7d0', textAlign: 'left', fontWeight: 900, color: '#166534' }}>이름</th>
+                                        <th style={{ padding: 8, borderBottom: '2px solid #bbf7d0', textAlign: 'left', fontWeight: 900, color: '#166534' }}>시간</th>
+                                        <th style={{ padding: 8, borderBottom: '2px solid #bbf7d0', textAlign: 'center', fontWeight: 900, color: '#166534' }}>정답률</th>
+                                        {hasContent && <>
+                                            <th style={{ padding: 8, borderBottom: '2px solid #bbf7d0', textAlign: 'left', fontWeight: 900, color: '#166534' }}>맞힘</th>
+                                            <th style={{ padding: 8, borderBottom: '2px solid #bbf7d0', textAlign: 'left', fontWeight: 900, color: '#166534' }}>틀림</th>
+                                        </>}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {records.slice().reverse().map((r, i) => {
+                                        const c = rateColor(r.rate);
+                                        return (
+                                            <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                                <td style={{ padding: 8 }}>{r.num}</td>
+                                                <td style={{ padding: 8, fontWeight: 700 }}>{r.name}</td>
+                                                <td style={{ padding: 8, fontSize: 12, color: '#64748b' }}>{r.timestamp}</td>
+                                                <td style={{ padding: 8, textAlign: 'center' }}>
+                                                    <span style={{ background: c.bg, color: c.text, padding: '3px 10px', borderRadius: 999, fontWeight: 900 }}>{r.rate}</span>
+                                                </td>
+                                                {hasContent && <>
+                                                    <td style={{ padding: 8, fontSize: 12, color: '#166534', maxWidth: 180, wordBreak: 'break-all' }}>{r.correct || '-'}</td>
+                                                    <td style={{ padding: 8, fontSize: 12, color: '#991b1b', maxWidth: 180, wordBreak: 'break-all' }}>{r.wrong || '-'}</td>
+                                                </>}
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    );
+                };
+
+                const renderSummary = () => {
+                    if (summary.length === 0) {
+                        return <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8', fontSize: 16 }}>아직 학습 기록이 없어요.</div>;
+                    }
+                    return (
+                        <div style={{ overflow: 'auto', flex: 1 }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+                                <thead style={{ position: 'sticky', top: 0, background: '#f0fdf4', zIndex: 1 }}>
+                                    <tr>
+                                        <th style={{ padding: 10, borderBottom: '2px solid #bbf7d0', textAlign: 'left', fontWeight: 900, color: '#166534' }}>번호</th>
+                                        <th style={{ padding: 10, borderBottom: '2px solid #bbf7d0', textAlign: 'left', fontWeight: 900, color: '#166534' }}>이름</th>
+                                        {['1단계','2단계','3단계','4단계'].map(s =>
+                                            <th key={s} style={{ padding: 10, borderBottom: '2px solid #bbf7d0', textAlign: 'center', fontWeight: 900, color: '#166534' }}>{s}</th>
+                                        )}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {summary.sort((a,b) => String(a.num).localeCompare(String(b.num), 'ko', {numeric: true})).map((s, i) => (
+                                        <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                            <td style={{ padding: 10 }}>{s.num}</td>
+                                            <td style={{ padding: 10, fontWeight: 700 }}>{s.name}</td>
+                                            {['1단계','2단계','3단계','4단계'].map(stg => {
+                                                const data = s.stages?.[stg];
+                                                if (!data) return <td key={stg} style={{ padding: 10, textAlign: 'center', color: '#cbd5e1' }}>—</td>;
+                                                const c = rateColor(data.rate);
+                                                return (
+                                                    <td key={stg} style={{ padding: 10, textAlign: 'center' }}>
+                                                        <span style={{ background: c.bg, color: c.text, padding: '3px 10px', borderRadius: 999, fontWeight: 900, fontSize: 13 }}>{data.rate}</span>
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    );
+                };
+
+                const tabs = [
+                    { id: 'summary', label: '📋 종합', icon: '📋' },
+                    { id: '1단계', label: '1단계', icon: '📦' },
+                    { id: '2단계', label: '2단계', icon: '✍️' },
+                    { id: '3단계', label: '3단계', icon: '🗣️' },
+                    { id: '4단계', label: '4단계', icon: '🎙️' },
+                ];
+
+                return (
+                    <>
+                        {/* 배경 클릭하면 닫힘 */}
+                        <div onClick={() => setShowStatsSidebar(false)} style={{
+                            position: 'fixed', inset: 0, zIndex: 500,
+                            background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)'
+                        }} />
+                        {/* 사이드바 */}
+                        <div style={{
+                            position: 'fixed', top: 0, right: 0, bottom: 0,
+                            width: '85%', maxWidth: 1100, zIndex: 501,
+                            background: 'white', boxShadow: '-10px 0 40px rgba(0,0,0,0.2)',
+                            display: 'flex', flexDirection: 'column',
+                            animation: 'slideInRight 0.3s ease-out'
+                        }}>
+                            {/* 헤더 */}
+                            <div style={{
+                                padding: '20px 28px',
+                                background: 'linear-gradient(90deg, #bbf7d0, #a7f3d0)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                borderBottom: '4px solid #4ade80'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{ fontSize: 36 }}>📊</div>
+                                    <div>
+                                        <h2 style={{ fontSize: 26, fontWeight: 900, color: '#166534', margin: 0 }}>학습 통계</h2>
+                                        <div style={{ fontSize: 13, color: '#15803d', fontWeight: 700 }}>학생들의 학습 결과를 확인하세요</div>
+                                    </div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 8 }}>
+                                    <button onClick={loadStatistics} disabled={statsLoading}
+                                        style={{ padding: '8px 16px', background: 'white', border: '2px solid #4ade80', borderRadius: 10, cursor: 'pointer', fontWeight: 900, color: '#166534', fontSize: 14 }}>
+                                        {statsLoading ? '⏳ 불러오는 중...' : '🔄 새로고침'}
+                                    </button>
+                                    <button onClick={() => setShowStatsSidebar(false)}
+                                        style={{ padding: '8px 16px', background: 'white', border: '2px solid #cbd5e1', borderRadius: 10, cursor: 'pointer', fontWeight: 900, color: '#475569', fontSize: 14 }}>
+                                        ✕ 닫기
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* 탭 */}
+                            <div style={{ display: 'flex', gap: 4, padding: '12px 28px 0', borderBottom: '2px solid #f1f5f9' }}>
+                                {tabs.map(t => (
+                                    <button key={t.id}
+                                        onClick={() => setStatsTab(t.id)}
+                                        style={{
+                                            padding: '10px 20px',
+                                            background: statsTab === t.id ? '#16a34a' : 'transparent',
+                                            color: statsTab === t.id ? 'white' : '#64748b',
+                                            border: 'none',
+                                            borderBottom: statsTab === t.id ? '3px solid #16a34a' : '3px solid transparent',
+                                            borderRadius: '10px 10px 0 0',
+                                            fontSize: 16, fontWeight: 900, cursor: 'pointer',
+                                            fontFamily: 'inherit'
+                                        }}>
+                                        {t.icon} {t.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* 컨텐츠 */}
+                            <div style={{ flex: 1, padding: '20px 28px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                                {statsLoading && !statsData ? (
+                                    <div style={{ padding: 60, textAlign: 'center', color: '#64748b', fontSize: 18 }}>⏳ 통계를 불러오는 중...</div>
+                                ) : (
+                                    <>
+                                        {statsTab === 'summary' && (
+                                            <>
+                                                <div style={{ marginBottom: 12, fontSize: 14, color: '#64748b' }}>
+                                                    학생별 각 단계 <b>가장 최근</b> 정답률입니다. 학생 수: <b>{summary.length}명</b>
+                                                </div>
+                                                {renderSummary()}
+                                            </>
+                                        )}
+                                        {['1단계','2단계','3단계','4단계'].includes(statsTab) && (
+                                            <>
+                                                <div style={{ marginBottom: 12, fontSize: 14, color: '#64748b' }}>
+                                                    {statsTab} 학습 기록 (최근순). 총 <b>{(stages[statsTab] || []).length}건</b>
+                                                </div>
+                                                {renderTable(stages[statsTab] || [], true)}
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </>
+                );
             };
 
             const startStage4 = (count) => {
@@ -1682,9 +1935,9 @@
                                         fontSize: 26, fontWeight: 900, color: '#1e293b',
                                         lineHeight: 1.6, margin: 0,
                                         whiteSpace: 'normal'
-                                    }}>{currentStep.message.split('\n').map((line, i, arr) => (
-                                        <span key={i} style={{ display: 'block', whiteSpace: 'nowrap' }}>
-                                            {line}{i < arr.length - 1 && <br/>}
+                                    }}>{currentStep.message.split('\n').map((line, i) => (
+                                        <span key={i} style={{ display: 'block', whiteSpace: 'pre' }}>
+                                            {line}
                                         </span>
                                     ))}</p>
 
@@ -1879,7 +2132,14 @@
                         <button onClick={() => setStep('login')} style={{ fontSize: 20, background: 'white', border: '1px solid #bbf7d0', padding: '10px 20px', borderRadius: 12, cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.05)' }}>
                             ◀ 이름 바꾸기
                         </button>
-                        <div style={{ fontSize: 24, fontWeight: 700, color: '#166534' }}>모험가: {currentUser?.name}</div>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                            <div style={{ fontSize: 24, fontWeight: 700, color: '#166534' }}>모험가: {currentUser?.name}</div>
+                            <button onClick={() => setShowStatsSidebar(true)}
+                                title="학습 통계 보기"
+                                style={{ fontSize: 18, fontWeight: 900, background: 'white', border: '2px solid #93c5fd', padding: '10px 18px', borderRadius: 12, cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.05)', color: '#1e40af', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                📊 학습 통계
+                            </button>
+                        </div>
                     </div>
 
                     <h2 style={{ fontSize: 48, fontWeight: 900, color: '#166534', textAlign: 'center' }}>📍 숫자 모험 지도</h2>
@@ -1952,6 +2212,9 @@
                             </div>
                         </div>
                     )}
+
+                    {/* 학습 통계 사이드바 */}
+                    {renderStatsSidebar()}
                 </div>
             );
 
