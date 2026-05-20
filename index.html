@@ -4,7 +4,7 @@
 <head>
     <!-- ★ GAS 웹 앱 URL: 아래 GAS_WEB_APP_URL 값을 수정하세요 ★ -->
     <script>
-        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzkDh4ToZcEjFWDsb62QQegxjgEN3wSyAG8iQMXZpyHuRr3-Nzu6FOlNLfKgyayuCE/exec";
+        const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyiRYJh1gWTMf2PPGZcLN520dxJL3KQ0Jx_LgO3RMoxjXc6JTpaeBajF0GLAnazylBh/exec";
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -231,6 +231,41 @@
             from { transform: translateX(100%); }
             to { transform: translateX(0); }
         }
+
+        @keyframes praisePop {
+            0% { transform: rotate(-3deg) scale(0); opacity: 0; }
+            40% { transform: rotate(-3deg) scale(1.2); opacity: 1; }
+            60% { transform: rotate(-3deg) scale(1); }
+            85% { transform: rotate(-3deg) scale(1); opacity: 1; }
+            100% { transform: rotate(-3deg) scale(0.8); opacity: 0; }
+        }
+        .praise-pop {
+            animation: praisePop 1.4s ease-in-out forwards;
+        }
+
+        @keyframes comboPop {
+            0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+            30% { transform: scale(1.3) rotate(5deg); opacity: 1; }
+            50% { transform: scale(1) rotate(0); }
+            85% { transform: scale(1) rotate(0); opacity: 1; }
+            100% { transform: scale(0.7) rotate(10deg); opacity: 0; }
+        }
+        .combo-pop {
+            animation: comboPop 2s ease-in-out forwards;
+        }
+
+        @keyframes comboBounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+        .combo-badge {
+            animation: comboBounce 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            from { transform: translateX(-50%) rotate(0deg); }
+            to { transform: translateX(-50%) rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -305,11 +340,57 @@
         const ALL_DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 
         const STAGE_DATA = [
-            { id: 1, name: "10씩 묶기", icon: "📦", pos: { top: '70%', left: '15%' } },
-            { id: 2, name: "수 쓰기", icon: "✍️", pos: { top: '40%', left: '35%' } },
-            { id: 3, name: "수 읽기", icon: "🗣️", pos: { top: '65%', left: '60%' } },
-            { id: 4, name: "소리로 읽기", icon: "🎙️", pos: { top: '30%', left: '80%' } },
+            {
+                id: 1, name: "10씩 묶기", icon: "📦",
+                pos: { top: '70%', left: '15%' },
+                storyName: "블록 마을", storyIcon: "🏘️",
+                intro: "블록 마을에 도착했어요! 마을 사람들이 십 모형으로 집을 짓고 있어요. 모형이 몇 개 있는지 두 가지 방법으로 읽어볼까요?",
+                clear: "와! 블록 마을의 비밀을 풀었어요! 🎉\n나침반 조각 한 개를 얻었어요!"
+            },
+            {
+                id: 2, name: "수 쓰기", icon: "✍️",
+                pos: { top: '40%', left: '35%' },
+                storyName: "숫자 동굴", storyIcon: "🕳️",
+                intro: "어두운 숫자 동굴에 들어왔어요! 벽에 이상한 우리말 글자가 적혀 있어요. 숫자로 바꿔야 길이 열려요!",
+                clear: "동굴의 비밀 글자를 모두 풀었어요! 🎉\n나침반 조각 한 개를 더 얻었어요!"
+            },
+            {
+                id: 3, name: "수 읽기", icon: "🗣️",
+                pos: { top: '65%', left: '60%' },
+                storyName: "두 얼굴의 숲", storyIcon: "🌳",
+                intro: "신비한 숲에 왔어요! 이 숲의 모든 수는 두 가지 이름이 있대요. 모형을 보고 숫자로 쓴 다음, 우리말로 읽어볼까요?",
+                clear: "숲의 비밀을 모두 풀었어요! 🎉\n나침반 조각 한 개를 더 얻었어요!"
+            },
+            {
+                id: 4, name: "소리로 읽기", icon: "🎙️",
+                pos: { top: '30%', left: '80%' },
+                storyName: "메아리 산", storyIcon: "⛰️",
+                intro: "마지막 모험지, 메아리 산에 도착했어요! 이 산은 소리로 길을 여는 곳이에요. 숫자를 두 가지로 소리쳐서 외쳐볼까요?",
+                clear: "마법 나침반이 완성됐어요! 🧭✨\n진정한 모험가가 되었어요!"
+            },
         ];
+
+        /* 정답 시 무작위로 표시되는 칭찬 메시지 풀 (1~2학년 친화적) */
+        const PRAISE_MESSAGES = [
+            { msg: '우와! 잘했어요!', emoji: '🌟' },
+            { msg: '대단해요!', emoji: '👏' },
+            { msg: '최고예요!', emoji: '🏆' },
+            { msg: '정답이에요!', emoji: '🎉' },
+            { msg: '멋져요!', emoji: '✨' },
+            { msg: '훌륭해요!', emoji: '💯' },
+            { msg: '완벽해요!', emoji: '🎊' },
+            { msg: '천재예요!', emoji: '🧠' },
+            { msg: '와아아!', emoji: '😆' },
+            { msg: '잘하고 있어요!', emoji: '💪' },
+        ];
+
+        /* 콤보 수에 따른 메시지 */
+        const COMBO_MESSAGES = {
+            3: { msg: '3연속 정답!', emoji: '🔥', color: '#f97316' },
+            5: { msg: '5연속 정답!', emoji: '⚡', color: '#eab308' },
+            7: { msg: '7연속! 굉장해!', emoji: '💫', color: '#a855f7' },
+            10: { msg: '10연속!! 천재!', emoji: '👑', color: '#ec4899' },
+        };
 
         /* 각 단계별 튜토리얼 (학습 방법 안내) */
         /* 각 단계별 인터랙티브 튜토리얼 시나리오
@@ -653,13 +734,21 @@
             const [wrong, setWrong] = useState([]);
             const [reviewMode, setReviewMode] = useState(false);
             const [stamp, setStamp] = useState(false);
+            const [combo, setCombo] = useState(0);  // 연속 정답 콤보
+            const [showComboPopup, setShowComboPopup] = useState(false);  // 콤보 팝업 표시
+            const [collectedStars, setCollectedStars] = useState(0);  // 누적 별 (세션 한정)
+            const [showPraisePopup, setShowPraisePopup] = useState(null);  // 칭찬 팝업 ({msg, emoji})
+            const [showStoryIntro, setShowStoryIntro] = useState(null);  // 스토리 인트로 (stage id)
+            const [seenStoryIntros, setSeenStoryIntros] = useState([]);  // 본 인트로 (세션당 1회)
             // 마이크 / 음성 녹음 상태
             const [micAllowed, setMicAllowed] = useState(false);
             const [isRecording, setIsRecording] = useState(false);
             const [transcript, setTranscript] = useState('');
             const [interimTranscript, setInterimTranscript] = useState('');
             const [voiceResult, setVoiceResult] = useState(null); // null | 'correct' | 'wrong'
-            const [voiceStep, setVoiceStep] = useState('sino'); // 'sino' | 'native'
+            const [voiceStep, setVoiceStep] = useState('sino'); // 'sino' | 'native' (호환성 유지, 더 이상 강제 안 함)
+            const [reading1, setReading1] = useState(null); // 첫 번째 읽기 {text, method}
+            const [reading2, setReading2] = useState(null); // 두 번째 읽기 {text, method}
             const [showHint, setShowHint] = useState(false);
             const [recordingAttempted, setRecordingAttempted] = useState(false); // 녹음 시도 여부
             const [sinoSpokenRaw, setSinoSpokenRaw] = useState(''); // sino 단계에서 인식된 원본 텍스트 (native 단계 비교용)
@@ -749,6 +838,8 @@
                 setShowHint(false);
                 setRecordingAttempted(false);  // 새 문제에서는 녹음 시도 초기화
                 setSinoSpokenRaw('');  // sino 발화 텍스트도 초기화
+                setReading1(null);  // 두 읽기 초기화
+                setReading2(null);
                 if (recogRef.current) {
                     try { recogRef.current.abort(); } catch (e) { }
                     recogRef.current = null;
@@ -843,17 +934,44 @@
                     }
 
                     setFeedback({ type: 'correct', msg: msg });
-                    speak('정답이야! 참 잘했어.', muted);
+
+                    // ★ 콤보 증가
+                    const newCombo = combo + 1;
+                    setCombo(newCombo);
+                    setCollectedStars(s => s + 1);
+
+                    // 랜덤 칭찬 메시지
+                    const praise = PRAISE_MESSAGES[Math.floor(Math.random() * PRAISE_MESSAGES.length)];
+                    setShowPraisePopup(praise);
+                    setTimeout(() => setShowPraisePopup(null), 1400);
+
+                    // 콤보 메시지 (3, 5, 7, 10 연속 시)
+                    if (COMBO_MESSAGES[newCombo]) {
+                        setShowComboPopup(COMBO_MESSAGES[newCombo]);
+                        setTimeout(() => setShowComboPopup(false), 2000);
+                        speak(COMBO_MESSAGES[newCombo].msg, muted);
+                    } else {
+                        speak(praise.msg, muted);
+                    }
 
                     if (window.confetti) {
+                        // 콤보가 높을수록 더 화려하게
+                        const particles = 100 + Math.min(newCombo * 30, 200);
                         window.confetti({
-                            particleCount: 150,
-                            spread: 70,
+                            particleCount: particles,
+                            spread: 70 + Math.min(newCombo * 5, 30),
                             origin: { y: 0.6 },
-                            colors: ['#22c55e', '#3b82f6', '#fbbf24', '#ef4444']
+                            colors: ['#22c55e', '#3b82f6', '#fbbf24', '#ef4444', '#a855f7', '#ec4899']
                         });
+                        // 콤보 5 이상이면 양쪽에서 추가
+                        if (newCombo >= 5) {
+                            setTimeout(() => window.confetti({ particleCount: 80, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#fbbf24', '#a855f7'] }), 200);
+                            setTimeout(() => window.confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#22c55e', '#ec4899'] }), 200);
+                        }
                     }
                 } else {
+                    // 오답 시 콤보 리셋
+                    setCombo(0);
                     let msg = "";
                     if (p.phase === 1) {
                         const hasSino = drops.includes(p.ans[0]);
@@ -974,8 +1092,10 @@
                     // 중간 결과는 실시간 표시
                     if (interimText) {
                         let cleanText = interimText.replace(/\s/g, '').replace(/[.,!?~]/g, '');
-                        cleanText = cleanText.replace(new RegExp(p.q.toString(), 'g'), voiceStep === 'sino' ? p.sinoReading : p.nativeReading);
-                        setInterimTranscript(voiceStep === 'sino' ? convertDigitsToSino(cleanText) : convertDigitsToNative(cleanText));
+                        // 첫 번째 읽기면 그대로, 두 번째면 reading1의 반대 방법으로 변환
+                        const useSino = !reading1 ? true : (reading1.method !== 'sino');
+                        cleanText = cleanText.replace(new RegExp(p.q.toString(), 'g'), useSino ? p.sinoReading : p.nativeReading);
+                        setInterimTranscript(useSino ? convertDigitsToSino(cleanText) : convertDigitsToNative(cleanText));
                     }
 
                     // 최종 결과 처리
@@ -992,18 +1112,15 @@
                             allAlternatives.push(altText);
                         }
 
-                        const targetReading = voiceStep === 'sino' ? p.sinoReading : p.nativeReading;
-                        const oppositeReading = voiceStep === 'sino' ? p.nativeReading : p.sinoReading;
-
-                        const cleanTarget = targetReading.replace(/[^가-힣]/g, '');
-                        const cleanOpposite = oppositeReading.replace(/[^가-힣]/g, '');
                         const cleanSinoReading = p.sinoReading.replace(/[^가-힣]/g, '');
                         const cleanNativeReading = p.nativeReading.replace(/[^가-힣]/g, '');
 
-                        // ★ alternatives 순위 기반 발음 추정
-                        // sino/native 정답이 alternatives에 있으면 가장 앞에 있는(신뢰도 높은) 것이 학생 발음
-                        let actualSpeech = null; // 'sino' | 'native' | null
-                        let spokenText = '';
+                        // ★ 학생 발화의 방법(sino/native) 자동 판단
+                        // 1) alternatives에서 sino/native 정답 위치 비교 → 더 앞이 학생 발음
+                        // 2) alternatives에 단서가 없으면 숫자 변환 시도
+                        let speechMethod = null; // 'sino' | 'native' | null
+                        let speechText = '';
+
                         let sinoIdx = -1, nativeIdx = -1;
                         allAlternatives.forEach((alt, idx) => {
                             const cleanAlt = alt.replace(/[^가-힣]/g, '');
@@ -1012,17 +1129,17 @@
                                 if (nativeIdx === -1 && cleanAlt === cleanNativeReading) nativeIdx = idx;
                             }
                         });
+
                         if (sinoIdx !== -1 && nativeIdx !== -1) {
-                            // 둘 다 있으면 앞 순위가 학생 발음
-                            actualSpeech = sinoIdx < nativeIdx ? 'sino' : 'native';
-                            spokenText = sinoIdx < nativeIdx ? cleanSinoReading : cleanNativeReading;
+                            speechMethod = sinoIdx < nativeIdx ? 'sino' : 'native';
+                            speechText = sinoIdx < nativeIdx ? cleanSinoReading : cleanNativeReading;
                         } else if (sinoIdx !== -1) {
-                            actualSpeech = 'sino'; spokenText = cleanSinoReading;
+                            speechMethod = 'sino'; speechText = cleanSinoReading;
                         } else if (nativeIdx !== -1) {
-                            actualSpeech = 'native'; spokenText = cleanNativeReading;
+                            speechMethod = 'native'; speechText = cleanNativeReading;
                         }
 
-                        // 숫자 변환 (피드백/표시용)
+                        // 숫자 변환
                         let primarySinoForm = primaryClean;
                         let primaryNativeForm = primaryClean;
                         if (/[0-9]/.test(primaryClean)) {
@@ -1033,70 +1150,53 @@
                         const cleanNative = primaryNativeForm.replace(/[^가-힣]/g, '');
                         const cleanPrimary = primaryClean.replace(/[^가-힣]/g, '');
 
+                        // 한글로 직접 말한 경우
+                        if (!speechMethod && !/[0-9]/.test(primaryClean) && cleanPrimary.length >= 2) {
+                            if (cleanPrimary === cleanSinoReading) { speechMethod = 'sino'; speechText = cleanSinoReading; }
+                            else if (cleanPrimary === cleanNativeReading) { speechMethod = 'native'; speechText = cleanNativeReading; }
+                        }
+                        // 숫자만 인식된 경우 (양방향 매치)
+                        if (!speechMethod && /[0-9]/.test(primaryClean)) {
+                            if (cleanSino === cleanSinoReading && cleanNative === cleanNativeReading) {
+                                // 둘 다 매치되면 어느 방법인지 알 수 없음 → 일단 sino로 가정 (인식 빈도 높음)
+                                speechMethod = 'sino'; speechText = cleanSinoReading;
+                            }
+                        }
+
                         let matched = false;
                         let bestText = primaryClean;
+                        let isReading1 = !reading1;  // 첫 번째 읽기인지
 
-                        // ★ 최우선: alternatives에서 학생의 실제 발음을 식별한 경우
-                        if (actualSpeech) {
-                            if (actualSpeech === voiceStep) {
+                        if (speechMethod) {
+                            // 정답 발음으로 인식됨
+                            if (isReading1) {
+                                // 첫 번째 읽기 → 자유롭게 정답
                                 matched = true;
-                                bestText = spokenText;
+                                bestText = speechText;
                             } else {
-                                matched = false;
-                                bestText = spokenText;
-                            }
-                        }
-                        // CASE A: 사용자가 한글로 직접 말한 경우 (숫자 없음)
-                        else if (!/[0-9]/.test(primaryClean)) {
-                            // 정답과 정확히 일치
-                            if (cleanPrimary.length >= 2 && cleanPrimary === cleanTarget) {
-                                matched = true;
-                                bestText = cleanPrimary;
-                            }
-                            // 반대 단계 읽기를 말한 경우 → 오답
-                            else if (cleanPrimary.length >= 2 && cleanPrimary === cleanOpposite) {
-                                matched = false;
-                                bestText = oppositeReading;
-                            }
-                            else {
-                                matched = false;
-                                bestText = cleanPrimary || primaryClean;
-                            }
-                        }
-                        // CASE B: 숫자만 인식되고 alternatives에도 한글 단서가 없는 경우
-                        // (학생이 어느 방법으로 말했는지 알 수 없으므로 현재 단계 변환으로 정답 처리)
-                        else {
-                            const currentForm = voiceStep === 'sino' ? cleanSino : cleanNative;
-                            const oppositeForm = voiceStep === 'sino' ? cleanNative : cleanSino;
-
-                            if (currentForm.length >= 2 && currentForm === cleanTarget) {
-                                matched = true;
-                                bestText = currentForm;
-                            } else {
-                                matched = false;
-                                if (oppositeForm.length >= 2 && oppositeForm === cleanOpposite) {
-                                    bestText = oppositeForm;
+                                // 두 번째 읽기 → reading1과 다른 방법이어야 정답
+                                if (speechMethod !== reading1.method) {
+                                    matched = true;
+                                    bestText = speechText;
                                 } else {
-                                    bestText = currentForm || primaryClean;
+                                    // 같은 방법으로 또 읽음 → 오답
+                                    matched = false;
+                                    bestText = speechText;
                                 }
                             }
+                        } else {
+                            // 정답과 일치하지 않는 발음 → 오답
+                            matched = false;
+                            bestText = cleanPrimary || primaryClean;
                         }
 
-                        // ★ 세션 안전장치: 같은 문제의 sino 단계에서 인식된 텍스트와 native 단계에서 인식된 텍스트가 같으면
-                        // 학생이 두 번 다 같은 방법으로 말한 것 → native 단계는 오답 처리
-                        // (예: sino에서 "오십구"→59 정답 처리되고, native에서도 "오십구"라고 말해 59가 인식되면 오답)
-                        if (matched && voiceStep === 'native' && sinoSpokenRaw) {
-                            // primaryClean과 sinoSpokenRaw가 같으면 = 두 번 다 같은 발음
-                            if (primaryClean === sinoSpokenRaw || cleanPrimary === sinoSpokenRaw.replace(/[^가-힣]/g, '')) {
-                                matched = false;
-                                // 학생이 sino를 두 번 말한 것으로 추정 → bestText를 sinoReading으로
-                                bestText = p.sinoReading;
+                        // reading1/reading2 저장
+                        if (matched) {
+                            if (isReading1) {
+                                setReading1({ text: speechText, method: speechMethod });
+                            } else {
+                                setReading2({ text: speechText, method: speechMethod });
                             }
-                        }
-
-                        // sino 단계 정답 시 발화 원본 저장 (다음 native 단계 안전장치용)
-                        if (matched && voiceStep === 'sino') {
-                            setSinoSpokenRaw(primaryClean);
                         }
 
                         setInterimTranscript('');
@@ -1110,10 +1210,36 @@
                         }
 
                         if (matched) {
-                            speak(voiceStep === 'sino' ? '정답이야! 이제 우리말로 바꿔볼까?' : '정답이야! 너무 잘 읽었어.', muted);
-                            if (window.confetti && voiceStep === 'native') window.confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#3b82f6', '#fbbf24', '#ef4444'] });
+                            // 두 번째 읽기 완성 시 콤보/별/칭찬
+                            if (!isReading1) {
+                                const newCombo = combo + 1;
+                                setCombo(newCombo);
+                                setCollectedStars(s => s + 1);
+                                const praise = PRAISE_MESSAGES[Math.floor(Math.random() * PRAISE_MESSAGES.length)];
+                                setShowPraisePopup(praise);
+                                setTimeout(() => setShowPraisePopup(null), 1400);
+                                if (COMBO_MESSAGES[newCombo]) {
+                                    setShowComboPopup(COMBO_MESSAGES[newCombo]);
+                                    setTimeout(() => setShowComboPopup(false), 2000);
+                                }
+                                if (window.confetti) {
+                                    window.confetti({ particleCount: 150 + Math.min(newCombo * 30, 200), spread: 70, origin: { y: 0.6 }, colors: ['#22c55e', '#3b82f6', '#fbbf24', '#ef4444', '#a855f7', '#ec4899'] });
+                                    if (newCombo >= 5) {
+                                        setTimeout(() => window.confetti({ particleCount: 80, angle: 60, spread: 55, origin: { x: 0 } }), 200);
+                                        setTimeout(() => window.confetti({ particleCount: 80, angle: 120, spread: 55, origin: { x: 1 } }), 200);
+                                    }
+                                }
+                            }
+                            speak(isReading1 ? '정답이야! 이제 다른 방법으로 읽어볼까?' : '정답이야! 너무 잘 읽었어.', muted);
                         } else {
-                            speak('다시 한번 읽어볼까?', muted);
+                            // 오답 시 콤보 리셋
+                            setCombo(0);
+                            // 두 번째 읽기에서 첫 번째와 같은 방법으로 읽은 경우 안내
+                            if (!isReading1 && speechMethod === reading1?.method) {
+                                speak('아까와 같은 방법이에요! 다른 방법으로 읽어볼까?', muted);
+                            } else {
+                                speak('다시 한번 읽어볼까?', muted);
+                            }
                         }
 
                         sendGasData('saveVoiceRecord', {
@@ -1121,7 +1247,7 @@
                             studentName: currentUser.name,
                             totalCount: problems.length,
                             probIndex: probIdx + 1,
-                            voiceStep: voiceStep,
+                            voiceStep: matched ? (speechMethod || 'sino') : (isReading1 ? 'sino' : 'native'),
                             transcribed: bestText,
                             isCorrect: matched ? '정답' : '오답',
                             sessionId: sessionId
@@ -1192,8 +1318,15 @@
                     setTranscript('');
                     setVoiceResult(null);
                     setShowHint(false);
+                    setCombo(0);  // 새 단계 시작 시 콤보 리셋
+                    setCollectedStars(0);  // 별도 리셋
                     setDrops(firstP.ans ? new Array(firstP.ans.length).fill(null) : []);
                     setStep('play');
+                    // 첫 진입 시 스토리 인트로 표시 (튜토리얼 본 단계는 인트로 생략)
+                    if (!seenStoryIntros.includes(id) && seenTutorials.includes(id)) {
+                        setShowStoryIntro(id);
+                        setSeenStoryIntros(prev => [...prev, id]);
+                    }
                     // 첫 진입 시 튜토리얼 표시 (튜토리얼 시작 시 drops는 튜토리얼 문제 크기로 재설정)
                     if (!seenTutorials.includes(id)) {
                         const tutData = TUTORIAL_DATA[id];
@@ -1436,6 +1569,8 @@
                 setShowHint(false);
                 setShowConfig4(false);
                 setSessionId(Date.now().toString());
+                setCombo(0);
+                setCollectedStars(0);
                 setStep('play');
                 // 4단계 첫 진입 시 튜토리얼 표시
                 if (!seenTutorials.includes(4)) {
@@ -1443,6 +1578,124 @@
                     setTutorialStep(0);
                     setSeenTutorials(prev => [...prev, 4]);
                 }
+            };
+
+            /* ── 칭찬 팝업 (정답 시 짧게 화면 중앙에 표시) ── */
+            const renderPraisePopup = () => {
+                if (!showPraisePopup) return null;
+                return (
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 200,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        pointerEvents: 'none'
+                    }}>
+                        <div className="praise-pop" style={{
+                            background: 'linear-gradient(135deg, #fef9c3, #fde68a)',
+                            border: '6px solid #fbbf24',
+                            borderRadius: 36,
+                            padding: '24px 56px',
+                            boxShadow: '0 20px 60px rgba(251,191,36,0.5)',
+                            display: 'flex', alignItems: 'center', gap: 16,
+                            transform: 'rotate(-3deg)'
+                        }}>
+                            <div style={{ fontSize: 64 }}>{showPraisePopup.emoji}</div>
+                            <div style={{ fontSize: 48, fontWeight: 900, color: '#854d0e', whiteSpace: 'nowrap' }}>{showPraisePopup.msg}</div>
+                        </div>
+                    </div>
+                );
+            };
+
+            /* ── 스토리 인트로 팝업 (단계 진입 시) ── */
+            const renderStoryIntro = () => {
+                if (!showStoryIntro) return null;
+                const story = STAGE_DATA[showStoryIntro - 1];
+                if (!story) return null;
+                return (
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 280,
+                        background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20
+                    }}>
+                        <div className="pop-in" style={{
+                            background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                            border: '8px solid #d97706',
+                            borderRadius: 40,
+                            padding: '40px 48px',
+                            maxWidth: 720, width: '92%',
+                            boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 24,
+                            position: 'relative'
+                        }}>
+                            {/* 나침반 장식 */}
+                            <div style={{
+                                position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)',
+                                background: 'white', borderRadius: '50%', padding: 12,
+                                border: '6px solid #d97706', boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+                                fontSize: 48, animation: 'spin 8s linear infinite'
+                            }}>🧭</div>
+
+                            <div style={{ height: 30 }} />
+
+                            {/* 모험지 표시 */}
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: 18, fontWeight: 700, color: '#92400e', marginBottom: 6 }}>
+                                    🗺️ {showStoryIntro}번째 모험지
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+                                    <div style={{ fontSize: 56 }}>{story.storyIcon}</div>
+                                    <div style={{ fontSize: 38, fontWeight: 900, color: '#78350f' }}>{story.storyName}</div>
+                                </div>
+                            </div>
+
+                            {/* 이야기 메시지 */}
+                            <div style={{
+                                background: 'white', borderRadius: 20, padding: '20px 28px',
+                                border: '3px solid #d97706', width: '100%',
+                                fontSize: 22, fontWeight: 700, color: '#451a03',
+                                lineHeight: 1.6, textAlign: 'center'
+                            }}>
+                                {story.intro}
+                            </div>
+
+                            {/* 시작 버튼 */}
+                            <button onClick={() => setShowStoryIntro(null)} style={{
+                                padding: '14px 48px',
+                                background: '#d97706', color: 'white',
+                                borderRadius: 999, fontSize: 26, fontWeight: 900,
+                                border: 'none', cursor: 'pointer',
+                                boxShadow: '0 10px 30px rgba(217,119,6,0.5)',
+                                fontFamily: 'inherit'
+                            }}>
+                                모험 시작! 🚀
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            /* ── 콤보 팝업 (3, 5, 7, 10 연속 정답 시) ── */
+            const renderComboPopup = () => {
+                if (!showComboPopup) return null;
+                return (
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 210,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        pointerEvents: 'none'
+                    }}>
+                        <div className="combo-pop" style={{
+                            background: showComboPopup.color,
+                            color: 'white',
+                            borderRadius: 999,
+                            padding: '32px 72px',
+                            boxShadow: `0 20px 60px ${showComboPopup.color}88`,
+                            display: 'flex', alignItems: 'center', gap: 20,
+                            border: '8px solid white'
+                        }}>
+                            <div style={{ fontSize: 72 }}>{showComboPopup.emoji}</div>
+                            <div style={{ fontSize: 56, fontWeight: 900, whiteSpace: 'nowrap', textShadow: '0 3px 10px rgba(0,0,0,0.2)' }}>{showComboPopup.msg}</div>
+                        </div>
+                    </div>
+                );
             };
 
             /* ── 인터랙티브 튜토리얼 (말풍선) ── */
@@ -2028,6 +2281,11 @@
                 } else {
                     setDrops([]);
                 }
+                // 튜토리얼 끝나면 스토리 인트로 표시 (해당 단계에서 처음 보는 경우)
+                if (!seenStoryIntros.includes(phase)) {
+                    setShowStoryIntro(phase);
+                    setSeenStoryIntros(prev => [...prev, phase]);
+                }
             };
 
             // 튜토리얼 건너뛰기
@@ -2042,19 +2300,29 @@
                 } else {
                     setDrops([]);
                 }
+                // 스토리 인트로도 함께 띄움
+                if (!seenStoryIntros.includes(phase)) {
+                    setShowStoryIntro(phase);
+                    setSeenStoryIntros(prev => [...prev, phase]);
+                }
             };
 
             /* ── INTRO ── */
             if (step === 'intro') return (
-                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 40, padding: 32, textAlign: 'center' }}>
+                <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 32, padding: 32, textAlign: 'center' }}>
                     <div className="float-anim" style={{ fontSize: 140 }}>🧭</div>
-                    <h1 style={{ fontSize: 80, fontWeight: 900, color: '#166534', letterSpacing: -2 }}>'100까지의 수' 모험</h1>
-                    <div style={{ background: 'white', border: '6px dashed #bbf7d0', padding: '40px 64px', borderRadius: 48, maxWidth: 800 }}>
-                        <p style={{ fontSize: 44, color: '#475569', fontWeight: 700, lineHeight: 1.6 }}>여러 가지 방법으로 수를 읽고 써보며<br />즐거운 숫자 모험을 떠나볼까요?</p>
+                    <h1 style={{ fontSize: 72, fontWeight: 900, color: '#166534', letterSpacing: -2, margin: 0 }}>마법 나침반의 비밀</h1>
+                    <div style={{ fontSize: 28, color: '#15803d', fontWeight: 700 }}>'100까지의 수' 모험</div>
+                    <div style={{ background: 'white', border: '6px dashed #d97706', padding: '32px 56px', borderRadius: 48, maxWidth: 880, background: 'linear-gradient(135deg, #fef3c7, #fef9c3)' }}>
+                        <p style={{ fontSize: 28, color: '#451a03', fontWeight: 700, lineHeight: 1.6, margin: 0 }}>
+                            옛날 옛적, 100까지 수를 두 가지 방법으로 읽을 줄 아는<br />
+                            진정한 모험가만이 마법 나침반의 비밀을 풀 수 있었대요. 🌟<br />
+                            <span style={{ fontSize: 24, color: '#92400e' }}>네 곳의 모험지를 탐험하며 나침반 조각을 모아볼까요?</span>
+                        </p>
                     </div>
                     <button className="main-btn" onClick={() => setStep('micPermission')}
-                        style={{ padding: '24px 80px', background: '#22c55e', color: 'white', borderRadius: 999, fontSize: 36, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 12px 32px rgba(34,197,94,0.4)' }}>
-                        탐험 시작! 🗺️
+                        style={{ padding: '20px 64px', background: '#22c55e', color: 'white', borderRadius: 999, fontSize: 32, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 12px 32px rgba(34,197,94,0.4)' }}>
+                        모험 시작! 🗺️
                     </button>
                 </div>
             );
@@ -2171,6 +2439,37 @@
 
                     <h2 style={{ fontSize: 48, fontWeight: 900, color: '#166534', textAlign: 'center' }}>📍 숫자 모험 지도</h2>
 
+                    {/* 🧭 마법 나침반 진행도 */}
+                    <div style={{
+                        background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                        border: '4px solid #d97706',
+                        borderRadius: 24, padding: '12px 24px',
+                        display: 'flex', alignItems: 'center', gap: 14,
+                        boxShadow: '0 6px 20px rgba(217,119,6,0.25)'
+                    }}>
+                        <div style={{ fontSize: 32 }}>🧭</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            <div style={{ fontSize: 14, fontWeight: 900, color: '#92400e' }}>마법 나침반</div>
+                            <div style={{ fontSize: 12, color: '#a16207', fontWeight: 700 }}>{completed.length} / 4 조각 모음</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, marginLeft: 6 }}>
+                            {[1,2,3,4].map(n => {
+                                const isOwned = completed.includes(n);
+                                return (
+                                    <div key={n} style={{
+                                        width: 28, height: 28, borderRadius: '50%',
+                                        background: isOwned ? 'linear-gradient(135deg, #fbbf24, #d97706)' : 'rgba(255,255,255,0.6)',
+                                        color: 'white',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: 14, fontWeight: 900,
+                                        boxShadow: isOwned ? '0 3px 8px rgba(217,119,6,0.4)' : 'none',
+                                        border: isOwned ? '2px solid #92400e' : '2px dashed #d97706'
+                                    }}>{isOwned ? '✨' : '?'}</div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
                     <div style={{ flex: 1, width: '100%', background: '#dcfce7', borderRadius: 48, border: '12px solid white', position: 'relative', overflow: 'hidden', boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.07)' }}>
                         <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.35 }} viewBox="0 0 1000 600">
                             <path d="M 150 420 Q 300 150 500 300 T 800 180" fill="none" stroke="#4ade80" strokeWidth="8" strokeDasharray="16 12" />
@@ -2204,10 +2503,14 @@
                                         background: unlocked ? 'white' : '#f8fafc',
                                         border: `3px solid ${unlocked ? '#bbf7d0' : '#e2e8f0'}`,
                                         color: unlocked ? '#1e293b' : '#94a3b8',
-                                        borderRadius: 999, padding: '10px 24px',
-                                        fontSize: 28, fontWeight: 900, whiteSpace: 'nowrap',
-                                        boxShadow: '0 6px 15px rgba(0,0,0,0.05)'
-                                    }}>{stg.id}. {stg.name}</div>
+                                        borderRadius: 999, padding: '8px 22px',
+                                        fontSize: 24, fontWeight: 900, whiteSpace: 'nowrap',
+                                        boxShadow: '0 6px 15px rgba(0,0,0,0.05)',
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2
+                                    }}>
+                                        <div style={{ fontSize: 13, color: '#d97706', fontWeight: 700 }}>{stg.storyIcon} {stg.storyName}</div>
+                                        <div>{stg.id}. {stg.name}</div>
+                                    </div>
                                 </button>
                             );
                         })}
@@ -2267,6 +2570,18 @@
                                 <div className="progress-bar" style={{ height: '100%', background: '#4ade80', borderRadius: 999, width: `${((probIdx + 1) / problems.length) * 100}%` }} />
                             </div>
                         </div>
+                        {/* ⭐ 별 카운터 */}
+                        <div style={{ fontSize: 18, fontWeight: 900, color: '#a16207', background: 'linear-gradient(135deg, #fef9c3, #fde68a)', padding: '6px 14px', borderRadius: 12, border: '2px solid #fbbf24', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 6px rgba(251,191,36,0.3)' }}>
+                            <span style={{ fontSize: 22 }}>⭐</span>
+                            <span>{collectedStars}</span>
+                        </div>
+                        {/* 🔥 콤보 카운터 */}
+                        {combo >= 2 && (
+                            <div className="combo-badge" style={{ fontSize: 18, fontWeight: 900, color: 'white', background: combo >= 7 ? '#ec4899' : combo >= 5 ? '#a855f7' : combo >= 3 ? '#f97316' : '#22c55e', padding: '6px 14px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+                                <span style={{ fontSize: 20 }}>🔥</span>
+                                <span>{combo} 연속!</span>
+                            </div>
+                        )}
                         <div style={{ fontSize: 18, fontWeight: 900, color: '#166534', background: 'white', padding: '6px 14px', borderRadius: 12, border: '2px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span>👤</span>
                             <span>{currentUser?.name}</span>
@@ -2347,10 +2662,10 @@
                         {/* 안내 문구 */}
                         {!voiceResult && (
                             <p style={{ fontSize: 40, fontWeight: 900, color: '#15803d', textAlign: 'center', margin: '12px 0' }}>
-                                {voiceStep === 'sino' ? (
-                                    <>첫 번째 방법으로 소리 내어 읽어보세요! 🗣️ <span style={{ fontSize: 26, color: '#64748b' }}>(예: 칠십구)</span></>
+                                {!reading1 ? (
+                                    <>소리 내어 읽어보세요! 🗣️ <span style={{ fontSize: 26, color: '#64748b' }}>(예: 칠십구, 일흔아홉)</span></>
                                 ) : (
-                                    <>두 번째 방법으로 소리 내어 읽어보세요! 🗣️ <span style={{ fontSize: 26, color: '#64748b' }}>(예: 일흔아홉)</span></>
+                                    <>다른 방법으로 한 번 더 읽어보세요! 🗣️ <span style={{ fontSize: 26, color: '#64748b' }}>(예: {reading1.method === 'sino' ? p.nativeReading : p.sinoReading})</span></>
                                 )}
                             </p>
                         )}
@@ -2360,133 +2675,144 @@
                         <div style={{ width: '100%', maxWidth: 900, display: 'flex', gap: 20 }}>
                             {/* 첫 번째 읽기 */}
                             <div style={{
-                                flex: 1, background: voiceStep === 'native' && !voiceResult ? '#f0fdf4' : '#f8fafc',
-                                borderRadius: 32, border: `4px dashed ${voiceStep === 'native' && voiceResult !== 'correct' ? '#bbf7d0' : '#bbf7d0'}`,
+                                flex: 1,
+                                background: reading1 ? '#f0fdf4' : (!isRecording && !voiceResult ? '#f0fdf4' : '#f8fafc'),
+                                borderRadius: 32, border: '4px dashed #bbf7d0',
                                 padding: '20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-                                opacity: voiceStep === 'native' ? 0.85 : 1,
                                 position: 'relative'
                             }}>
-                                <div style={{ fontSize: 30, fontWeight: 900, color: '#3b82f6' }}>읽기 ① <span style={{ fontSize: 22, color: '#64748b', fontWeight: 700 }}>(예: 십일)</span></div>
-                                {/* 완료 표시 */}
-                                {voiceStep === 'native' && (
-                                    <div style={{ position: 'absolute', top: 16, right: 16, fontSize: 32 }}>✅</div>
-                                )}
-                                {/* 녹음 버튼 + 건너뛰기 */}
-                                {voiceStep === 'sino' && !voiceResult && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <button
-                                            onClick={startRecording}
-                                            disabled={isRecording}
-                                            style={{
-                                                padding: '16px 32px', whiteSpace: 'nowrap',
-                                                background: isRecording ? '#ef4444' : '#22c55e',
-                                                color: 'white', borderRadius: 999, fontSize: 28, fontWeight: 900,
-                                                border: 'none', cursor: isRecording ? 'not-allowed' : 'pointer',
-                                                boxShadow: isRecording ? '0 0 30px rgba(239,68,68,0.4)' : '0 12px 32px rgba(34,197,94,0.35)',
-                                                display: 'flex', alignItems: 'center', gap: 12,
-                                                animation: isRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
-                                            }}
-                                        >
-                                            {isRecording ? <><span>🔴</span><span>듣고 있어요...</span></> : <><span>🎙️</span><span>녹음하기</span></>}
-                                        </button>
-                                        {isRecording && recordingAttempted && (
-                                            <button onClick={() => {
-                                                if (recogRef.current) { try { recogRef.current.stop(); } catch(e){} }
-                                                setIsRecording(false);
-                                                if (!reviewMode && !wrong.find(w => w.id === p.id)) setWrong(pr => [...pr, p]);
-                                                sendGasData('saveVoiceRecord', { studentNum: currentUser?.num, studentName: currentUser?.name, totalCount: problems.length, probIndex: probIdx + 1, voiceStep, transcribed: '(건너뜀)', isCorrect: '오답', sessionId });
-                                                setTranscript(''); setVoiceResult(null); setVoiceStep('sino');
-                                                if (probIdx < problems.length - 1) { setProbIdx(probIdx + 1); }
-                                                else { if (reviewMode) { setReviewMode(false); setWrong([]); setStep('map'); } else { setStamp(true); if (!completed.includes(phase)) setCompleted(pr => [...pr, phase]); } }
-                                            }} style={{ padding: '18px 24px', background: 'white', color: '#94a3b8', borderRadius: 999, fontSize: 22, fontWeight: 700, border: '2px dashed #cbd5e1', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                                                ⏭️ 건너뛰기
-                                            </button>
+                                <div style={{ fontSize: 28, fontWeight: 900, color: '#3b82f6' }}>
+                                    첫 번째 방법
+                                </div>
+                                {/* reading1 완료 상태 */}
+                                {reading1 ? (
+                                    <>
+                                        <div style={{ position: 'absolute', top: 16, right: 16, fontSize: 32 }}>✅</div>
+                                        <div style={{ fontSize: 40, fontWeight: 900, color: '#2563eb' }}>{reading1.text}</div>
+                                    </>
+                                ) : (
+                                    <>
+                                        {/* 녹음 버튼 + 건너뛰기 (reading1 미완성 시) */}
+                                        {!voiceResult && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <button
+                                                    onClick={startRecording}
+                                                    disabled={isRecording}
+                                                    style={{
+                                                        padding: '16px 32px', whiteSpace: 'nowrap',
+                                                        background: isRecording ? '#ef4444' : '#22c55e',
+                                                        color: 'white', borderRadius: 999, fontSize: 28, fontWeight: 900,
+                                                        border: 'none', cursor: isRecording ? 'not-allowed' : 'pointer',
+                                                        boxShadow: isRecording ? '0 0 30px rgba(239,68,68,0.4)' : '0 12px 32px rgba(34,197,94,0.35)',
+                                                        display: 'flex', alignItems: 'center', gap: 12,
+                                                        animation: isRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
+                                                    }}
+                                                >
+                                                    {isRecording ? <><span>🔴</span><span>듣고 있어요...</span></> : <><span>🎙️</span><span>녹음하기</span></>}
+                                                </button>
+                                                {isRecording && recordingAttempted && (
+                                                    <button onClick={() => {
+                                                        if (recogRef.current) { try { recogRef.current.stop(); } catch(e){} }
+                                                        setIsRecording(false);
+                                                        if (!reviewMode && !wrong.find(w => w.id === p.id)) setWrong(pr => [...pr, p]);
+                                                        sendGasData('saveVoiceRecord', { studentNum: currentUser?.num, studentName: currentUser?.name, totalCount: problems.length, probIndex: probIdx + 1, voiceStep: 'sino', transcribed: '(건너뜀)', isCorrect: '오답', sessionId });
+                                                        setTranscript(''); setVoiceResult(null); setReading1(null); setReading2(null);
+                                                        if (probIdx < problems.length - 1) { setProbIdx(probIdx + 1); }
+                                                        else { if (reviewMode) { setReviewMode(false); setWrong([]); setStep('map'); } else { setStamp(true); if (!completed.includes(phase)) setCompleted(pr => [...pr, phase]); } }
+                                                    }} style={{ padding: '18px 24px', background: 'white', color: '#94a3b8', borderRadius: 999, fontSize: 22, fontWeight: 700, border: '2px dashed #cbd5e1', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                                        ⏭️ 건너뛰기
+                                                    </button>
+                                                )}
+                                            </div>
                                         )}
-                                    </div>
-                                )}
-                                {voiceStep === 'sino' && isRecording && (
-                                    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 40 }}>
-                                        {[0.4,0.8,1,0.6,0.9,0.5,0.7,0.3,0.8,0.5,0.7,0.4].map((h, i) => (
-                                            <div key={i} style={{ width: 8, background: '#ef4444', borderRadius: 5, height: `${h * 100}%`, animation: `soundWave 0.7s ease-in-out infinite`, animationDelay: `${i * 0.07}s` }} />
-                                        ))}
-                                    </div>
-                                )}
-                                {voiceStep === 'sino' && isRecording && (
-                                    <div style={{ minHeight: 60, width: '100%', background: 'white', border: '3px solid #fca5a5', borderRadius: 24, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <span style={{ fontSize: interimTranscript ? 36 : 22, fontWeight: 900, color: interimTranscript ? '#dc2626' : '#cbd5e1' }}>
-                                            {interimTranscript || '말해보세요...'}
-                                        </span>
-                                    </div>
-                                )}
-                                {/* 완료 후 결과 */}
-                                {voiceStep === 'native' && (
-                                    <div style={{ fontSize: 40, fontWeight: 900, color: '#2563eb' }}>{p.sinoReading}</div>
+                                        {isRecording && (
+                                            <>
+                                                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 40 }}>
+                                                    {[0.4,0.8,1,0.6,0.9,0.5,0.7,0.3,0.8,0.5,0.7,0.4].map((h, i) => (
+                                                        <div key={i} style={{ width: 8, background: '#ef4444', borderRadius: 5, height: `${h * 100}%`, animation: `soundWave 0.7s ease-in-out infinite`, animationDelay: `${i * 0.07}s` }} />
+                                                    ))}
+                                                </div>
+                                                <div style={{ minHeight: 60, width: '100%', background: 'white', border: '3px solid #fca5a5', borderRadius: 24, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <span style={{ fontSize: interimTranscript ? 36 : 22, fontWeight: 900, color: interimTranscript ? '#dc2626' : '#cbd5e1' }}>
+                                                        {interimTranscript || '말해보세요...'}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
                                 )}
                             </div>
 
                             {/* 두 번째 읽기 */}
                             <div style={{
-                                flex: 1, background: '#f8fafc',
-                                borderRadius: 32, border: '4px dashed #bbf7d0',
+                                flex: 1,
+                                background: reading1 && !reading2 ? '#fdf2f8' : (reading2 ? '#f0fdf4' : '#f8fafc'),
+                                borderRadius: 32, border: '4px dashed #f9a8d4',
                                 padding: '20px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-                                opacity: voiceStep === 'sino' ? 0.5 : 1,
+                                opacity: !reading1 ? 0.5 : 1,
                                 position: 'relative'
                             }}>
-                                <div style={{ fontSize: 30, fontWeight: 900, color: '#ec4899' }}>읽기 ② <span style={{ fontSize: 22, color: '#64748b', fontWeight: 700 }}>(예: 열하나)</span></div>
-                                {/* 잠금 표시 (첫 번째 안 끝났을 때) */}
-                                {voiceStep === 'sino' && (
+                                <div style={{ fontSize: 28, fontWeight: 900, color: '#ec4899' }}>
+                                    두 번째 방법
+                                </div>
+                                {/* reading2 완료 상태 */}
+                                {reading2 ? (
+                                    <>
+                                        <div style={{ position: 'absolute', top: 16, right: 16, fontSize: 32 }}>✅</div>
+                                        <div style={{ fontSize: 40, fontWeight: 900, color: '#db2777' }}>{reading2.text}</div>
+                                    </>
+                                ) : !reading1 ? (
                                     <div style={{ fontSize: 48, marginTop: 8 }}>🔒</div>
-                                )}
-                                {/* 녹음 버튼 + 건너뛰기 */}
-                                {voiceStep === 'native' && !voiceResult && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                        <button
-                                            onClick={startRecording}
-                                            disabled={isRecording}
-                                            style={{
-                                                padding: '16px 32px', whiteSpace: 'nowrap',
-                                                background: isRecording ? '#ef4444' : '#22c55e',
-                                                color: 'white', borderRadius: 999, fontSize: 28, fontWeight: 900,
-                                                border: 'none', cursor: isRecording ? 'not-allowed' : 'pointer',
-                                                boxShadow: isRecording ? '0 0 30px rgba(239,68,68,0.4)' : '0 12px 32px rgba(34,197,94,0.35)',
-                                                display: 'flex', alignItems: 'center', gap: 12,
-                                                animation: isRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
-                                            }}
-                                        >
-                                            {isRecording ? <><span>🔴</span><span>듣고 있어요...</span></> : <><span>🎙️</span><span>녹음하기</span></>}
-                                        </button>
-                                        {isRecording && recordingAttempted && (
-                                            <button onClick={() => {
-                                                if (recogRef.current) { try { recogRef.current.stop(); } catch(e){} }
-                                                setIsRecording(false);
-                                                if (!reviewMode && !wrong.find(w => w.id === p.id)) setWrong(pr => [...pr, p]);
-                                                sendGasData('saveVoiceRecord', { studentNum: currentUser?.num, studentName: currentUser?.name, totalCount: problems.length, probIndex: probIdx + 1, voiceStep, transcribed: '(건너뜀)', isCorrect: '오답', sessionId });
-                                                setTranscript(''); setVoiceResult(null); setVoiceStep('sino');
-                                                if (probIdx < problems.length - 1) { setProbIdx(probIdx + 1); }
-                                                else { if (reviewMode) { setReviewMode(false); setWrong([]); setStep('map'); } else { setStamp(true); if (!completed.includes(phase)) setCompleted(pr => [...pr, phase]); } }
-                                            }} style={{ padding: '18px 24px', background: 'white', color: '#94a3b8', borderRadius: 999, fontSize: 22, fontWeight: 700, border: '2px dashed #cbd5e1', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                                                ⏭️ 건너뛰기
-                                            </button>
+                                ) : (
+                                    <>
+                                        {/* 녹음 버튼 + 건너뛰기 (reading1 완료, reading2 미완성 시) */}
+                                        {!voiceResult && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <button
+                                                    onClick={startRecording}
+                                                    disabled={isRecording}
+                                                    style={{
+                                                        padding: '16px 32px', whiteSpace: 'nowrap',
+                                                        background: isRecording ? '#ef4444' : '#22c55e',
+                                                        color: 'white', borderRadius: 999, fontSize: 28, fontWeight: 900,
+                                                        border: 'none', cursor: isRecording ? 'not-allowed' : 'pointer',
+                                                        boxShadow: isRecording ? '0 0 30px rgba(239,68,68,0.4)' : '0 12px 32px rgba(34,197,94,0.35)',
+                                                        display: 'flex', alignItems: 'center', gap: 12,
+                                                        animation: isRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
+                                                    }}
+                                                >
+                                                    {isRecording ? <><span>🔴</span><span>듣고 있어요...</span></> : <><span>🎙️</span><span>녹음하기</span></>}
+                                                </button>
+                                                {isRecording && recordingAttempted && (
+                                                    <button onClick={() => {
+                                                        if (recogRef.current) { try { recogRef.current.stop(); } catch(e){} }
+                                                        setIsRecording(false);
+                                                        if (!reviewMode && !wrong.find(w => w.id === p.id)) setWrong(pr => [...pr, p]);
+                                                        sendGasData('saveVoiceRecord', { studentNum: currentUser?.num, studentName: currentUser?.name, totalCount: problems.length, probIndex: probIdx + 1, voiceStep: 'native', transcribed: '(건너뜀)', isCorrect: '오답', sessionId });
+                                                        setTranscript(''); setVoiceResult(null); setReading1(null); setReading2(null);
+                                                        if (probIdx < problems.length - 1) { setProbIdx(probIdx + 1); }
+                                                        else { if (reviewMode) { setReviewMode(false); setWrong([]); setStep('map'); } else { setStamp(true); if (!completed.includes(phase)) setCompleted(pr => [...pr, phase]); } }
+                                                    }} style={{ padding: '18px 24px', background: 'white', color: '#94a3b8', borderRadius: 999, fontSize: 22, fontWeight: 700, border: '2px dashed #cbd5e1', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                                        ⏭️ 건너뛰기
+                                                    </button>
+                                                )}
+                                            </div>
                                         )}
-                                    </div>
-                                )}
-                                {voiceStep === 'native' && isRecording && (
-                                    <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 40 }}>
-                                        {[0.4,0.8,1,0.6,0.9,0.5,0.7,0.3,0.8,0.5,0.7,0.4].map((h, i) => (
-                                            <div key={i} style={{ width: 8, background: '#ef4444', borderRadius: 5, height: `${h * 100}%`, animation: `soundWave 0.7s ease-in-out infinite`, animationDelay: `${i * 0.07}s` }} />
-                                        ))}
-                                    </div>
-                                )}
-                                {voiceStep === 'native' && isRecording && (
-                                    <div style={{ minHeight: 60, width: '100%', background: 'white', border: '3px solid #fca5a5', borderRadius: 24, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <span style={{ fontSize: interimTranscript ? 36 : 22, fontWeight: 900, color: interimTranscript ? '#dc2626' : '#cbd5e1' }}>
-                                            {interimTranscript || '말해보세요...'}
-                                        </span>
-                                    </div>
-                                )}
-                                {/* 두 번째도 완료 */}
-                                {voiceStep === 'native' && voiceResult === 'correct' && (
-                                    <div style={{ fontSize: 32, marginTop: 4 }}>✅</div>
+                                        {isRecording && (
+                                            <>
+                                                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 40 }}>
+                                                    {[0.4,0.8,1,0.6,0.9,0.5,0.7,0.3,0.8,0.5,0.7,0.4].map((h, i) => (
+                                                        <div key={i} style={{ width: 8, background: '#ef4444', borderRadius: 5, height: `${h * 100}%`, animation: `soundWave 0.7s ease-in-out infinite`, animationDelay: `${i * 0.07}s` }} />
+                                                    ))}
+                                                </div>
+                                                <div style={{ minHeight: 60, width: '100%', background: 'white', border: '3px solid #fca5a5', borderRadius: 24, padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <span style={{ fontSize: interimTranscript ? 36 : 22, fontWeight: 900, color: interimTranscript ? '#dc2626' : '#cbd5e1' }}>
+                                                        {interimTranscript || '말해보세요...'}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -2518,7 +2844,7 @@
                                         <div style={{ textAlign: 'center' }}>
                                             <div style={{ fontSize: 22, color: '#64748b', marginBottom: 8, fontWeight: 700 }}>정답</div>
                                             <div style={{ fontSize: 72, fontWeight: 900, color: '#2563eb', lineHeight: 1 }}>
-                                                {voiceResult === 'correct' ? (voiceStep === 'sino' ? p.sinoReading : p.nativeReading) : '???'}
+                                                {voiceResult === 'correct' ? (!reading2 ? (reading1?.text || p.sinoReading) : reading2.text) : '???'}
                                                 <span style={{ fontSize: 36, color: '#94a3b8', fontWeight: 700, marginLeft: 12 }}>({p.q})</span>
                                             </div>
                                         </div>
@@ -2533,14 +2859,15 @@
                                         color: voiceResult === 'correct' ? '#166534' : '#dc2626'
                                     }}>
                                         {voiceResult === 'correct' ? (
-                                            voiceStep === 'sino' ? '🌟 잘 읽었어요!' : '🌟 완벽해요!'
+                                            !reading2 ? '🌟 잘 읽었어요! 다른 방법으로도 읽어볼까요?' : '🌟 완벽해요!'
                                         ) : (
                                             <span>
                                                 <span style={{ fontSize: 36, color: '#475569', lineHeight: 1.5, display: 'block' }}>
                                                     {(() => {
                                                         const tens = Math.floor(p.q / 10);
                                                         const units = p.q % 10;
-                                                        const isSino = voiceStep === 'sino';
+                                                        // 학생이 첫 번째 읽기를 마쳤다면 다음은 반대 방법, 아니면 어느 쪽이든 가능
+                                                        const isSino = reading1 ? (reading1.method !== 'sino') : true;
                                                         const highlightStyle = { background: 'linear-gradient(180deg,transparent 65%,#fde68a 0)', padding: '0 4px', fontWeight: 900, color: '#1e293b' };
                                                         const exampleStyle = { background: '#dbeafe', color: '#1e40af', padding: '0 6px', borderRadius: 6, fontWeight: 900 };
 
@@ -2554,7 +2881,6 @@
                                                         const cleanOpposite = oppositeReading.replace(/[^가-힣]/g, '');
 
                                                         // 정답에 쓰인 십의 자리 숫자/낱개 (예시 만들 때 피할 값)
-                                                        // 십의 자리 예시: 정답의 tens와 다른 2개 선택
                                                         const tensExamplePool = [1,2,3,4,5,6,7,8,9].filter(t => t !== tens);
                                                         const tensEx = [tensExamplePool[0], tensExamplePool[1]];
                                                         const tensExLabel = (t) => isSino
@@ -2703,16 +3029,15 @@
                                                 ⏭️ 건너뛰기
                                             </button>
                                         )}
-                                        {voiceResult === 'correct' && voiceStep === 'sino' && (
+                                        {voiceResult === 'correct' && reading1 && !reading2 && (
                                             <button onClick={() => {
                                                 setTranscript('');
                                                 setVoiceResult(null);
-                                                setVoiceStep('native');
                                             }} className="main-btn" style={{ flex: 1, padding: '20px', background: '#3b82f6', color: 'white', borderRadius: 24, fontSize: 28, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(59,130,246,0.3)' }}>
                                                 다르게 읽기 ▶
                                             </button>
                                         )}
-                                        {voiceResult === 'correct' && voiceStep === 'native' && (
+                                        {voiceResult === 'correct' && reading1 && reading2 && (
                                             <button onClick={nextVoice} className="main-btn" style={{ flex: 1, padding: '20px', background: '#22c55e', color: 'white', borderRadius: 24, fontSize: 28, fontWeight: 900, border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(34,197,94,0.3)' }}>
                                                 {probIdx < problems.length - 1 ? '다음 문제 ▶' : '완료! 🎉'}
                                             </button>
@@ -2730,6 +3055,64 @@
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 16 }}>
                                     <div style={{ fontSize: 60 }}>🎙️</div>
                                     <h2 style={{ fontSize: 44, fontWeight: 900, color: '#166534', margin: 0 }}>소리로 읽기 완료!</h2>
+                                </div>
+
+                                {/* 🧭 스토리 클리어 메시지 */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                    border: '4px solid #d97706', borderRadius: 20,
+                                    padding: '16px 24px', marginBottom: 16,
+                                    display: 'flex', alignItems: 'center', gap: 14,
+                                    boxShadow: '0 8px 24px rgba(217,119,6,0.3)'
+                                }}>
+                                    <div style={{ fontSize: 48 }}>⛰️</div>
+                                    <div style={{ flex: 1, textAlign: 'left' }}>
+                                        <div style={{ fontSize: 14, fontWeight: 700, color: '#92400e' }}>메아리 산 클리어!</div>
+                                        <div style={{ fontSize: 18, fontWeight: 900, color: '#451a03', whiteSpace: 'pre-line', lineHeight: 1.4 }}>마법 나침반이 완성됐어요! 🧭✨{'\n'}진정한 모험가가 되었어요!</div>
+                                    </div>
+                                </div>
+
+                                {/* 🧭 나침반 조각 */}
+                                <div style={{
+                                    background: 'white', border: '3px solid #cbd5e1', borderRadius: 20,
+                                    padding: '14px 20px', marginBottom: 16,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12
+                                }}>
+                                    <div style={{ fontSize: 16, fontWeight: 900, color: '#475569' }}>🧭</div>
+                                    <div style={{ display: 'flex', gap: 8 }}>
+                                        {[1,2,3,4].map(n => {
+                                            const isOwned = completed.includes(n) || n === 4;
+                                            return (
+                                                <div key={n} style={{
+                                                    width: 38, height: 38, borderRadius: '50%',
+                                                    background: isOwned ? 'linear-gradient(135deg, #fbbf24, #d97706)' : '#e2e8f0',
+                                                    color: 'white',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: 18, fontWeight: 900,
+                                                    boxShadow: isOwned ? '0 4px 12px rgba(217,119,6,0.4)' : 'none',
+                                                    border: isOwned ? '3px solid #92400e' : '3px solid #cbd5e1'
+                                                }}>{isOwned ? '✨' : '?'}</div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{ fontSize: 14, fontWeight: 700, color: '#475569' }}>완성!</div>
+                                </div>
+
+                                {/* ⭐ 모은 별 표시 */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #fef9c3, #fde68a)',
+                                    border: '4px solid #fbbf24',
+                                    borderRadius: 24,
+                                    padding: '16px 28px',
+                                    marginBottom: 20,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+                                    boxShadow: '0 8px 24px rgba(251,191,36,0.3)'
+                                }}>
+                                    <div style={{ fontSize: 44 }}>⭐</div>
+                                    <div>
+                                        <div style={{ fontSize: 16, color: '#854d0e', fontWeight: 700 }}>이번 모험에서 모은 별</div>
+                                        <div style={{ fontSize: 36, fontWeight: 900, color: '#a16207' }}>{collectedStars}개</div>
+                                    </div>
                                 </div>
                                 <div style={{ background: '#f0fdf4', borderRadius: 32, padding: '32px', margin: '24px 0 40px', border: '4px solid #bbf7d0' }}>
                                     <div style={{ display: 'flex', justifyContent: 'center', gap: 60, alignItems: 'center' }}>
@@ -2773,6 +3156,9 @@
                     )}
 
                     {/* 튜토리얼 모달 */}
+                    {renderPraisePopup()}
+                    {renderComboPopup()}
+                    {renderStoryIntro()}
                     {renderTutorial()}
                 </div>
             );
@@ -2810,6 +3196,18 @@
                                 <div className="progress-bar" style={{ height: '100%', background: reviewMode ? '#fb923c' : '#4ade80', borderRadius: 999, width: `${((probIdx + 1) / problems.length) * 100}%` }} />
                             </div>
                         </div>
+                        {/* ⭐ 별 카운터 */}
+                        <div style={{ fontSize: 18, fontWeight: 900, color: '#a16207', background: 'linear-gradient(135deg, #fef9c3, #fde68a)', padding: '6px 14px', borderRadius: 12, border: '2px solid #fbbf24', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 2px 6px rgba(251,191,36,0.3)' }}>
+                            <span style={{ fontSize: 22 }}>⭐</span>
+                            <span>{collectedStars}</span>
+                        </div>
+                        {/* 🔥 콤보 카운터 (2 이상일 때) */}
+                        {combo >= 2 && (
+                            <div className="combo-badge" style={{ fontSize: 18, fontWeight: 900, color: 'white', background: combo >= 7 ? '#ec4899' : combo >= 5 ? '#a855f7' : combo >= 3 ? '#f97316' : '#22c55e', padding: '6px 14px', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+                                <span style={{ fontSize: 20 }}>🔥</span>
+                                <span>{combo} 연속!</span>
+                            </div>
+                        )}
                         <div style={{ fontSize: 18, fontWeight: 900, color: '#166534', background: 'white', padding: '6px 14px', borderRadius: 12, border: '2px solid #bbf7d0', display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span>👤</span>
                             <span>{currentUser?.name}</span>
@@ -3086,6 +3484,70 @@
                                     <h2 style={{ fontSize: 44, fontWeight: 900, color: '#166534', margin: 0 }}>학습 결과 보고서</h2>
                                 </div>
 
+                                {/* 🧭 스토리 클리어 메시지 */}
+                                {STAGE_DATA[phase - 1]?.clear && (
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+                                        border: '4px solid #d97706', borderRadius: 24,
+                                        padding: '20px 28px', marginBottom: 20,
+                                        display: 'flex', alignItems: 'center', gap: 16,
+                                        boxShadow: '0 8px 24px rgba(217,119,6,0.3)'
+                                    }}>
+                                        <div style={{ fontSize: 56 }}>{STAGE_DATA[phase - 1].storyIcon}</div>
+                                        <div style={{ flex: 1, textAlign: 'left' }}>
+                                            <div style={{ fontSize: 16, fontWeight: 700, color: '#92400e' }}>{STAGE_DATA[phase - 1].storyName} 클리어!</div>
+                                            <div style={{ fontSize: 20, fontWeight: 900, color: '#451a03', whiteSpace: 'pre-line', lineHeight: 1.4 }}>{STAGE_DATA[phase - 1].clear}</div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 🧭 나침반 조각 진행 표시 */}
+                                <div style={{
+                                    background: 'white', border: '3px solid #cbd5e1', borderRadius: 20,
+                                    padding: '16px 24px', marginBottom: 24,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14
+                                }}>
+                                    <div style={{ fontSize: 18, fontWeight: 900, color: '#475569' }}>🧭 마법 나침반</div>
+                                    <div style={{ display: 'flex', gap: 10 }}>
+                                        {[1,2,3,4].map(n => {
+                                            const isOwned = completed.includes(n) || n === phase;
+                                            return (
+                                                <div key={n} style={{
+                                                    width: 44, height: 44, borderRadius: '50%',
+                                                    background: isOwned ? 'linear-gradient(135deg, #fbbf24, #d97706)' : '#e2e8f0',
+                                                    color: isOwned ? 'white' : '#94a3b8',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: 22, fontWeight: 900,
+                                                    boxShadow: isOwned ? '0 4px 12px rgba(217,119,6,0.4)' : 'none',
+                                                    border: isOwned ? '3px solid #92400e' : '3px solid #cbd5e1'
+                                                }}>
+                                                    {isOwned ? '✨' : '?'}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{ fontSize: 16, fontWeight: 700, color: '#475569' }}>
+                                        {completed.filter(c => c !== phase).length + 1} / 4
+                                    </div>
+                                </div>
+
+                                {/* ⭐ 모은 별 표시 */}
+                                <div style={{
+                                    background: 'linear-gradient(135deg, #fef9c3, #fde68a)',
+                                    border: '4px solid #fbbf24',
+                                    borderRadius: 24,
+                                    padding: '20px 32px',
+                                    marginBottom: 24,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
+                                    boxShadow: '0 8px 24px rgba(251,191,36,0.3)'
+                                }}>
+                                    <div style={{ fontSize: 56 }}>⭐</div>
+                                    <div>
+                                        <div style={{ fontSize: 18, color: '#854d0e', fontWeight: 700 }}>이번 모험에서 모은 별</div>
+                                        <div style={{ fontSize: 44, fontWeight: 900, color: '#a16207' }}>{collectedStars}개</div>
+                                    </div>
+                                </div>
+
                                 <div style={{ textAlign: 'left', background: '#f0fdf4', padding: 28, borderRadius: 32, marginBottom: 32, width: '100%', border: '2px solid #dcfce7' }}>
                                     <p style={{ fontSize: 24, marginBottom: 16 }}>👤 <b>모험가:</b> {currentUser?.name} ({currentUser?.num}번)</p>
                                     <p style={{ fontSize: 24, marginBottom: 16 }}>📅 <b>날짜:</b> {new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
@@ -3169,6 +3631,9 @@
                     )}
 
                     {/* 튜토리얼 모달 */}
+                    {renderPraisePopup()}
+                    {renderComboPopup()}
+                    {renderStoryIntro()}
                     {renderTutorial()}
                 </div>
             );
