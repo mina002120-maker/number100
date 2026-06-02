@@ -328,24 +328,31 @@ const {
 async function callGas(action, data = {}) {
   // URL이 설정되지 않았거나 유효한 GAS URL이 아니면 무시
   if (!GAS_WEB_APP_URL || !GAS_WEB_APP_URL.startsWith('https://script.google.com')) {
-    console.warn("GAS_WEB_APP_URL이 설정되지 않았습니다.");
+    console.warn("GAS_WEB_APP_URL이 설정되지 않았습니다. 현재 값:", GAS_WEB_APP_URL);
     return null;
   }
   return new Promise((resolve, reject) => {
     const callbackName = 'gas_callback_' + Math.round(Math.random() * 1000000);
+    const script = document.createElement('script');
 
-    // 타임아웃 설정 (10초)
-    const timeout = setTimeout(() => {
+    const cleanup = () => {
       delete window[callbackName];
-      console.error("GAS 호출 시간 초과");
+      if (script.parentNode) script.parentNode.removeChild(script);
+    };
+
+    // 타임아웃 설정 (15초)
+    const timeout = setTimeout(() => {
+      cleanup();
+      console.error("GAS 호출 시간 초과:", action);
       resolve(null);
-    }, 10000);
+    }, 15000);
+
     window[callbackName] = response => {
       clearTimeout(timeout);
-      delete window[callbackName];
+      cleanup();
       resolve(response);
     };
-    const script = document.createElement('script');
+
     const url = new URL(GAS_WEB_APP_URL);
     url.searchParams.append('action', action);
     url.searchParams.append('callback', callbackName);
@@ -353,11 +360,12 @@ async function callGas(action, data = {}) {
     script.src = url.toString();
     script.onerror = () => {
       clearTimeout(timeout);
+      cleanup();
+      console.error("GAS 스크립트 로드 실패:", action);
       resolve(null);
     };
     document.body.appendChild(script);
-    // 스크립트 태그는 호출 후 삭제
-    setTimeout(() => document.body.removeChild(script), 1000);
+    // 스크립트는 콜백 실행 또는 타임아웃 시 cleanup()에서 제거 (조기 삭제 방지)
   });
 }
 
@@ -1203,6 +1211,7 @@ function App() {
   const [students, setStudents] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [rosterDiag, setRosterDiag] = useState(''); // 명단 연동 진단 메시지
   const [phase, setPhase] = useState(1);
   const [probIdx, setProbIdx] = useState(0);
   const [completed, setCompleted] = useState([]);
@@ -1262,15 +1271,26 @@ function App() {
       setIsLoading(true);
       const loadStudents = async () => {
         let data = null;
+        const urlInjected = GAS_WEB_APP_URL && GAS_WEB_APP_URL.startsWith('https://script.google.com');
         // 실제 GAS 주소가 주입된 경우에만 호출 (배포 전 __SHEET_API_URL__ 상태면 가상 데이터)
-        if (GAS_WEB_APP_URL && GAS_WEB_APP_URL.startsWith('https://script.google.com')) {
+        if (urlInjected) {
           data = await callGas('getStudentList');
         }
-        if (data && Array.isArray(data)) {
+        if (data && Array.isArray(data) && data.length > 0) {
           setStudents(data);
+          setRosterDiag('');
           setIsLoading(false);
         } else {
-          // URL이 없거나 호출 실패 시 가상 데이터 사용
+          // 실패 원인 진단 메시지
+          if (!urlInjected) {
+            setRosterDiag('⚠️ GAS 주소가 주입되지 않았습니다. GitHub Actions 배포(__SHEET_API_URL__ 교체)를 확인하세요.');
+          } else if (data === null) {
+            setRosterDiag('⚠️ GAS 호출 실패(응답 없음). 웹앱 배포 권한(모든 사용자)과 URL을 확인하세요.');
+          } else if (Array.isArray(data) && data.length === 0) {
+            setRosterDiag("⚠️ 명단이 비어 있습니다. 시트 탭 이름이 '명단'인지, A열=번호 B열=이름인지 확인하세요.");
+          } else {
+            setRosterDiag('⚠️ 알 수 없는 응답 형식입니다.');
+          }
           console.log("가상 데이터를 불러옵니다.");
           setTimeout(() => {
             setStudents([{
@@ -4412,7 +4432,37 @@ function App() {
       color: '#166534',
       marginBottom: 24
     }
-  }, "\uB204\uAD6C\uC778\uAC00\uC694? \uD83E\uDDD1\uD83C\uDF93"), isLoading ? /*#__PURE__*/React.createElement("div", {
+  }, "\uB204\uAD6C\uC778\uAC00\uC694? \uD83E\uDDD1\uD83C\uDF93"), rosterDiag ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxWidth: 440,
+      width: '100%',
+      marginBottom: 16,
+      padding: '12px 18px',
+      background: '#fef2f2',
+      border: '2px solid #fca5a5',
+      borderRadius: 16,
+      fontSize: 14,
+      color: '#991b1b',
+      lineHeight: 1.5
+    }
+  }, rosterDiag, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      setStudents([]);
+      setRosterDiag('');
+    },
+    style: {
+      display: 'block',
+      marginTop: 8,
+      padding: '6px 16px',
+      background: '#ef4444',
+      color: 'white',
+      border: 'none',
+      borderRadius: 8,
+      fontSize: 14,
+      fontWeight: 700,
+      cursor: 'pointer'
+    }
+  }, "\uD83D\uDD04 \uB2E4\uC2DC \uBD88\uB7EC\uC624\uAE30")) : null, isLoading ? /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
