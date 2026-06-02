@@ -9,6 +9,9 @@
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>'100까지의 수' 모험 - 수 읽고 쓰기</title>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -430,7 +433,7 @@ const ALL_DIGITS = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
 /* 개념 익히기 - 4개 학습 세트 */
 const CONCEPT_SETS = [{
   id: 'sino-ten',
-  title: '한자어로 십 단위 읽기',
+  title: '십 단위 읽기 (1)',
   icon: '🔟',
   color: '#3b82f6',
   bg: 'linear-gradient(135deg, #60a5fa, #3b82f6)',
@@ -442,7 +445,7 @@ const CONCEPT_SETS = [{
   }))
 }, {
   id: 'native-ten',
-  title: '우리말로 십 단위 읽기',
+  title: '십 단위 읽기 (2)',
   icon: '🌟',
   color: '#ec4899',
   bg: 'linear-gradient(135deg, #f472b6, #ec4899)',
@@ -454,7 +457,7 @@ const CONCEPT_SETS = [{
   }))
 }, {
   id: 'sino-unit',
-  title: '한자어로 낱개 읽기',
+  title: '낱개 읽기 (1)',
   icon: '1️⃣',
   color: '#22c55e',
   bg: 'linear-gradient(135deg, #4ade80, #22c55e)',
@@ -466,7 +469,7 @@ const CONCEPT_SETS = [{
   }))
 }, {
   id: 'native-unit',
-  title: '우리말로 낱개 읽기',
+  title: '낱개 읽기 (2)',
   icon: '✋',
   color: '#f97316',
   bg: 'linear-gradient(135deg, #fb923c, #f97316)',
@@ -2075,6 +2078,14 @@ function App() {
       setStamp(false);
       setShowConfig4(true);
     } else if (id === 5) {
+      // 마법 나침반 4조각(1~4단계 모두 완료)을 모아야 입장 가능
+      const hasAllPieces = [1, 2, 3, 4].every(n => completed.includes(n));
+      if (!hasAllPieces) {
+        const done = [1, 2, 3, 4].filter(n => completed.includes(n)).length;
+        alert('번개 탑은 마법 나침반 4조각을 모두 모아야 도전할 수 있어요!\n\n지금까지 모은 조각: ' + done + ' / 4\n\n1~4단계를 모두 완료하고 다시 와주세요! 🧭');
+        speak('마법 나침반 네 조각을 모두 모아야 번개 탑에 도전할 수 있어요!', muted);
+        return;
+      }
       setStep('map');
       setStamp(false);
       setShowConfig5(true);
@@ -4678,112 +4689,146 @@ function App() {
           flexShrink: 0,
           boxShadow: conceptIdx === 0 ? 'none' : '0 6px 16px rgba(0,0,0,0.1)'
         }
-      }, '\u25C0'), /*#__PURE__*/React.createElement("div", {
-        key: conceptIdx,
-        className: "pop-in",
-        style: {
-          flex: 1,
-          maxWidth: 760,
-          background: 'white',
-          borderRadius: 48,
-          border: `8px solid ${conceptSet.color}`,
-          boxShadow: '0 20px 50px rgba(0,0,0,0.12)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 18,
-          padding: '32px 32px 28px',
-          position: 'relative'
-        }
-      }, /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 110,
-          fontWeight: 900,
-          color: conceptSet.color,
-          lineHeight: 1
-        }
-      }, card.num), /*#__PURE__*/React.createElement(BlocksDisplay, {
-        value: card.num
-      }), /*#__PURE__*/React.createElement("div", {
-        style: {
-          fontSize: 64,
-          fontWeight: 900,
-          color: '#1e293b',
-          background: `${conceptSet.color}15`,
-          padding: '10px 44px',
-          borderRadius: 28
-        }
-      }, card.word), /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          gap: 14,
-          flexWrap: 'wrap',
-          justifyContent: 'center'
-        }
-      }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => speak(card.word, false),
-        style: {
-          padding: '14px 28px',
-          background: conceptSet.bg,
-          color: 'white',
-          borderRadius: 999,
-          fontSize: 22,
-          fontWeight: 900,
-          border: 'none',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          boxShadow: `0 8px 20px ${conceptSet.color}55`
-        }
-      }, '\u{1F50A}', " \uB4E3\uAE30"), /*#__PURE__*/React.createElement("button", {
-        onClick: () => startConceptRecording(card.word),
-        disabled: conceptRecording,
-        style: {
-          padding: '14px 28px',
-          background: conceptRecording ? '#ef4444' : '#22c55e',
-          color: 'white',
-          borderRadius: 999,
-          fontSize: 22,
-          fontWeight: 900,
-          border: 'none',
-          cursor: conceptRecording ? 'not-allowed' : 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          boxShadow: conceptRecording ? '0 0 24px rgba(239,68,68,0.4)' : '0 8px 20px rgba(34,197,94,0.4)',
-          animation: conceptRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
-        }
-      }, conceptRecording ? '\u{1F534} 듣고 있어요...' : '\u{1F399}\uFE0F 따라 말하기')), conceptRecording && /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 10,
-          padding: '10px 24px',
-          borderRadius: 20,
-          fontSize: 28,
-          fontWeight: 900,
-          minWidth: 180,
-          background: '#eff6ff',
-          color: conceptInterim ? '#1d4ed8' : '#93c5fd',
-          border: '3px solid #bfdbfe'
-        }
-      }, conceptInterim || '말해보세요...'), conceptHeard && /*#__PURE__*/React.createElement("div", {
-        style: {
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '10px 24px',
-          borderRadius: 20,
-          fontSize: 24,
-          fontWeight: 900,
-          background: conceptHeard.correct ? '#dcfce7' : '#fef2f2',
-          color: conceptHeard.correct ? '#166534' : '#dc2626',
-          border: `3px solid ${conceptHeard.correct ? '#86efac' : '#fca5a5'}`
-        }
-      }, conceptHeard.correct ? '\u{1F31F} 정답이에요!' : '\u{1F5E3}\uFE0F "' + conceptHeard.text + '" — 다시 해볼까요?')), /*#__PURE__*/React.createElement("button", {
+      }, '\u25C0'), /*#__PURE__*//*#__PURE__*/React.createElement("div", {
+    key: conceptIdx,
+    className: "pop-in",
+    style: {
+      flex: 1,
+      maxWidth: 720,
+      maxHeight: '100%',
+      background: 'white',
+      borderRadius: 40,
+      border: `8px solid ${conceptSet.color}`,
+      boxShadow: '0 20px 50px rgba(0,0,0,0.12)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      padding: '20px 28px',
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 80,
+      fontWeight: 900,
+      color: conceptSet.color,
+      lineHeight: 1
+    }
+  }, card.num), /*#__PURE__*/React.createElement("div", {
+    style: {
+      transform: 'scale(0.85)'
+    }
+  }, /*#__PURE__*/React.createElement(BlocksDisplay, {
+    value: card.num
+  })), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 52,
+      fontWeight: 900,
+      color: '#1e293b',
+      background: `${conceptSet.color}15`,
+      padding: '8px 40px',
+      borderRadius: 24
+    }
+  }, card.word), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 12,
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      alignItems: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => speak(card.word, false),
+    style: {
+      padding: '12px 24px',
+      background: conceptSet.bg,
+      color: 'white',
+      borderRadius: 999,
+      fontSize: 20,
+      fontWeight: 900,
+      border: 'none',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      boxShadow: `0 6px 16px ${conceptSet.color}55`
+    }
+  }, '\u{1F50A}', " \uB4E3\uAE30"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => startConceptRecording(card.word),
+    disabled: conceptRecording,
+    style: {
+      padding: '12px 24px',
+      background: conceptRecording ? '#ef4444' : '#22c55e',
+      color: 'white',
+      borderRadius: 999,
+      fontSize: 20,
+      fontWeight: 900,
+      border: 'none',
+      cursor: conceptRecording ? 'not-allowed' : 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      boxShadow: conceptRecording ? '0 0 24px rgba(239,68,68,0.4)' : '0 6px 16px rgba(34,197,94,0.4)',
+      animation: conceptRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
+    }
+  }, conceptRecording ? '\u{1F534} 듣고 있어요...' : '\u{1F399}\uFE0F 따라 말하기'), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (conceptIdx < cards.length - 1) {
+        setConceptIdx(conceptIdx + 1);
+        setConceptHeard(null);
+        setConceptRecording(false);
+        setConceptInterim('');
+      }
+    },
+    disabled: conceptIdx === cards.length - 1,
+    style: {
+      padding: '12px 20px',
+      background: 'white',
+      color: conceptIdx === cards.length - 1 ? '#cbd5e1' : '#94a3b8',
+      borderRadius: 999,
+      fontSize: 18,
+      fontWeight: 700,
+      border: '2px dashed #cbd5e1',
+      cursor: conceptIdx === cards.length - 1 ? 'not-allowed' : 'pointer',
+      whiteSpace: 'nowrap'
+    }
+  }, '\u23ED\uFE0F', " \uAC74\uB108\uB6F0\uAE30")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      minHeight: 44,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, conceptRecording ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      padding: '8px 24px',
+      borderRadius: 18,
+      fontSize: 24,
+      fontWeight: 900,
+      minWidth: 180,
+      background: '#eff6ff',
+      color: conceptInterim ? '#1d4ed8' : '#93c5fd',
+      border: '3px solid #bfdbfe'
+    }
+  }, conceptInterim || '말해보세요...') : conceptHeard ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 10,
+      padding: '8px 24px',
+      borderRadius: 18,
+      fontSize: 22,
+      fontWeight: 900,
+      background: conceptHeard.correct ? '#dcfce7' : '#fef2f2',
+      color: conceptHeard.correct ? '#166534' : '#dc2626',
+      border: `3px solid ${conceptHeard.correct ? '#86efac' : '#fca5a5'}`
+    }
+  }, conceptHeard.correct ? '\u{1F31F} 정답이에요!' : '\u{1F5E3}\uFE0F "' + conceptHeard.text + '" — 다시 해볼까요?') : null)), /*#__PURE__*/React.createElement("button", {
         onClick: goNext,
         disabled: conceptIdx === cards.length - 1,
         style: {
@@ -5017,6 +5062,7 @@ function App() {
     }, '\u{1F31F}', " \uBA3C\uC800 \uBC30\uC6B0\uAE30"), /*#__PURE__*/React.createElement("div", null, "\uAC1C\uB150 \uC775\uD788\uAE30"))), STAGE_DATA.map(stg => {
     const done = completed.includes(stg.id);
     const isChallenge = stg.id === 5;
+    const locked = isChallenge && ![1, 2, 3, 4].every(n => completed.includes(n));
     return /*#__PURE__*/React.createElement("button", {
       key: stg.id,
       className: "stage-btn",
@@ -5040,17 +5086,17 @@ function App() {
         width: isChallenge ? 120 : 100,
         height: isChallenge ? 120 : 100,
         borderRadius: isChallenge ? 36 : 28,
-        background: isChallenge ? 'linear-gradient(135deg, #fbbf24, #f97316)' : done ? 'white' : 'white',
-        border: `5px solid ${isChallenge ? '#d97706' : done ? '#fbbf24' : '#4ade80'}`,
+        background: locked ? 'linear-gradient(135deg, #cbd5e1, #94a3b8)' : isChallenge ? 'linear-gradient(135deg, #fbbf24, #f97316)' : done ? 'white' : 'white',
+        border: `5px solid ${locked ? '#94a3b8' : isChallenge ? '#d97706' : done ? '#fbbf24' : '#4ade80'}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: isChallenge ? 56 : 48,
-        boxShadow: isChallenge ? '0 12px 30px rgba(249,115,22,0.4)' : '0 8px 20px rgba(0,0,0,0.1)',
+        boxShadow: locked ? '0 8px 20px rgba(0,0,0,0.1)' : isChallenge ? '0 12px 30px rgba(249,115,22,0.4)' : '0 8px 20px rgba(0,0,0,0.1)',
         position: 'relative',
-        animation: isChallenge ? 'comboBounce 1.5s ease-in-out infinite' : 'none'
+        animation: isChallenge && !locked ? 'comboBounce 1.5s ease-in-out infinite' : 'none'
       }
-    }, stg.icon, done && !isChallenge && /*#__PURE__*/React.createElement("div", {
+    }, locked ? '\u{1F512}' : stg.icon, done && !isChallenge && /*#__PURE__*/React.createElement("div", {
       style: {
         position: 'absolute',
         top: -10,
@@ -5068,15 +5114,15 @@ function App() {
       }
     }, "\u2713")), /*#__PURE__*/React.createElement("div", {
       style: {
-        background: isChallenge ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : done ? 'white' : 'white',
-        border: `3px solid ${isChallenge ? '#d97706' : done ? '#fbbf24' : '#bbf7d0'}`,
-        color: isChallenge ? '#92400e' : '#1e293b',
+        background: locked ? '#f1f5f9' : isChallenge ? 'linear-gradient(135deg, #fef3c7, #fde68a)' : done ? 'white' : 'white',
+        border: `3px solid ${locked ? '#cbd5e1' : isChallenge ? '#d97706' : done ? '#fbbf24' : '#bbf7d0'}`,
+        color: locked ? '#94a3b8' : isChallenge ? '#92400e' : '#1e293b',
         borderRadius: 999,
         padding: isChallenge ? '10px 26px' : '8px 22px',
         fontSize: isChallenge ? 26 : 24,
         fontWeight: 900,
         whiteSpace: 'nowrap',
-        boxShadow: isChallenge ? '0 6px 20px rgba(249,115,22,0.3)' : '0 6px 15px rgba(0,0,0,0.05)',
+        boxShadow: locked ? '0 6px 15px rgba(0,0,0,0.05)' : isChallenge ? '0 6px 20px rgba(249,115,22,0.3)' : '0 6px 15px rgba(0,0,0,0.05)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -5085,10 +5131,10 @@ function App() {
     }, /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: isChallenge ? 26 : 24,
-        color: isChallenge ? '#b45309' : '#d97706',
+        color: locked ? '#94a3b8' : isChallenge ? '#b45309' : '#d97706',
         fontWeight: 700
       }
-    }, stg.storyIcon, " ", stg.storyName), /*#__PURE__*/React.createElement("div", null, stg.id, ". ", stg.name)));
+    }, locked ? '\u{1F9ED} 4조각 필요' : stg.storyIcon + ' ' + stg.storyName), /*#__PURE__*/React.createElement("div", null, stg.id, ". ", stg.name)));
   })), showConceptMenu && /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
