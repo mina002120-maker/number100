@@ -1253,6 +1253,7 @@ function App() {
   const [conceptRecording, setConceptRecording] = useState(false); // 개념 익히기 녹음 중
   const [conceptHeard, setConceptHeard] = useState(null); // 개념 익히기 녹음 결과 {text, correct}
   const [conceptInterim, setConceptInterim] = useState(''); // 개념 익히기 녹음 중 실시간 텍스트
+  const [learnedSets, setLearnedSets] = useState([]); // 학습 완료한 개념 세트 id 목록
   const [challengeLevel, setChallengeLevel] = useState(null); // 선택된 도전 레벨
   const [timeLeft, setTimeLeft] = useState(0); // 남은 시간(초)
   const [timerActive, setTimerActive] = useState(false); // 타이머 작동 여부
@@ -4843,32 +4844,58 @@ function App() {
           flexShrink: 0,
           boxShadow: conceptIdx === cards.length - 1 ? 'none' : '0 6px 16px rgba(0,0,0,0.1)'
         }
-      }, '\u25B6')), conceptIdx === cards.length - 1 && /*#__PURE__*/React.createElement("div", {
-        style: {
-          padding: '0 24px 24px',
-          display: 'flex',
-          justifyContent: 'center'
-        }
-      }, /*#__PURE__*/React.createElement("button", {
-        onClick: () => {
-          setStep('map');
-          setConceptSet(null);
-          setConceptIdx(0);
-          setConceptHeard(null);
-        },
-        className: "main-btn",
-        style: {
-          padding: '16px 48px',
-          background: conceptSet.bg,
-          color: 'white',
-          borderRadius: 999,
-          fontSize: 26,
-          fontWeight: 900,
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: `0 10px 24px ${conceptSet.color}55`
-        }
-      }, "\uB2E4 \uBC30\uC6E0\uC5B4\uC694! ", '\u{1F389}')));
+      }, '\u25B6')), conceptIdx === cards.length - 1 ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: '0 24px 24px',
+      display: 'flex',
+      justifyContent: 'center',
+      gap: 16,
+      flexWrap: 'wrap'
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (currentUser) sendGasData('saveConcept', { studentNum: currentUser.num, studentName: currentUser.name, conceptId: conceptSet.id });
+      if (!learnedSets.includes(conceptSet.id)) setLearnedSets(prev => [...prev, conceptSet.id]);
+      setConceptSet(null);
+      setConceptIdx(0);
+      setConceptHeard(null);
+      setConceptRecording(false);
+      setConceptInterim('');
+      setStep('map');
+      setShowConceptMenu(true);
+    },
+    className: "main-btn",
+    style: {
+      padding: '16px 40px',
+      background: conceptSet.bg,
+      color: 'white',
+      borderRadius: 999,
+      fontSize: 24,
+      fontWeight: 900,
+      border: 'none',
+      cursor: 'pointer',
+      boxShadow: `0 10px 24px ${conceptSet.color}55`
+    }
+  }, '\u2705', " \uB2E4 \uBC30\uC6E0\uC5B4\uC694! \uB2E4\uC74C \uB2E8\uACC4 \uACE0\uB974\uAE30"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (currentUser) sendGasData('saveConcept', { studentNum: currentUser.num, studentName: currentUser.name, conceptId: conceptSet.id });
+      if (!learnedSets.includes(conceptSet.id)) setLearnedSets(prev => [...prev, conceptSet.id]);
+      setStep('map');
+      setConceptSet(null);
+      setConceptIdx(0);
+      setConceptHeard(null);
+    },
+    style: {
+      padding: '16px 40px',
+      background: 'white',
+      color: '#475569',
+      borderRadius: 999,
+      fontSize: 24,
+      fontWeight: 900,
+      border: '3px solid #cbd5e1',
+      cursor: 'pointer'
+    }
+  }, '\u{1F3E0}', " \uC9C0\uB3C4\uB85C \uAC00\uAE30")) : null)
     }
 
   /* ── MAP ── */
@@ -5187,46 +5214,68 @@ function App() {
       gap: 14,
       marginBottom: 22
     }
-  }, CONCEPT_SETS.map(set => /*#__PURE__*/React.createElement("button", {
-    key: set.id,
-    onClick: () => {
-      setConceptSet(set);
-      setConceptIdx(0);
-      setShowConceptMenu(false);
-      setStep('concept');
-    },
-    style: {
-      background: set.bg,
-      border: 'none',
-      borderRadius: 24,
-      padding: '22px 18px',
-      cursor: 'pointer',
-      textAlign: 'left',
-      boxShadow: `0 8px 20px ${set.color}55`,
-      transition: 'transform 0.15s',
-      fontFamily: 'inherit'
-    },
-    onMouseEnter: e => e.currentTarget.style.transform = 'scale(1.04)',
-    onMouseLeave: e => e.currentTarget.style.transform = 'scale(1)'
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 40,
-      marginBottom: 6
-    }
-  }, set.icon), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 24,
-      fontWeight: 900,
-      color: 'white',
-      marginBottom: 4
-    }
-  }, set.title), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 16,
-      fontWeight: 700,
-      color: 'rgba(255,255,255,0.85)'
-    }
-  }, set.desc)))), /*#__PURE__*/React.createElement("button", {
+  }, CONCEPT_SETS.map(set => {
+    const learned = learnedSets.includes(set.id);
+    return /*#__PURE__*/React.createElement("button", {
+      key: set.id,
+      onClick: () => {
+        setConceptSet(set);
+        setConceptIdx(0);
+        setShowConceptMenu(false);
+        setConceptHeard(null);
+        setConceptRecording(false);
+        setConceptInterim('');
+        setStep('concept');
+      },
+      style: {
+        position: 'relative',
+        background: set.bg,
+        border: learned ? '4px solid #fbbf24' : 'none',
+        borderRadius: 24,
+        padding: '22px 18px',
+        cursor: 'pointer',
+        textAlign: 'left',
+        boxShadow: `0 8px 20px ${set.color}55`,
+        transition: 'transform 0.15s',
+        fontFamily: 'inherit',
+        opacity: learned ? 0.92 : 1
+      },
+      onMouseEnter: e => e.currentTarget.style.transform = 'scale(1.04)',
+      onMouseLeave: e => e.currentTarget.style.transform = 'scale(1)'
+    }, learned && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        top: -12,
+        right: -10,
+        background: '#fbbf24',
+        color: 'white',
+        borderRadius: 999,
+        padding: '4px 14px',
+        fontSize: 15,
+        fontWeight: 900,
+        boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
+        border: '2px solid white'
+      }
+    }, '\u2705', " \uBC30\uC6E0\uC5B4\uC694"), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 40,
+        marginBottom: 6
+      }
+    }, set.icon), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 24,
+        fontWeight: 900,
+        color: 'white',
+        marginBottom: 4
+      }
+    }, set.title), /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 16,
+        fontWeight: 700,
+        color: 'rgba(255,255,255,0.85)'
+      }
+    }, set.desc));
+  })), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowConceptMenu(false),
     style: {
       fontSize: 18,
