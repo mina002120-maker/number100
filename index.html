@@ -1947,16 +1947,18 @@ function App() {
             speak('다시 한번 읽어볼까?', muted);
           }
         }
-        sendGasData('saveVoiceRecord', {
-          studentNum: currentUser.num,
-          studentName: currentUser.name,
-          totalCount: problems.length,
-          probIndex: probIdx + 1,
-          voiceStep: matched ? speechMethod || 'sino' : isReading1 ? 'sino' : 'native',
-          transcribed: bestText,
-          isCorrect: matched ? '정답' : '오답',
-          sessionId: sessionId
-        });
+        if (!reviewMode && currentUser) {
+          sendGasData('saveVoiceRecord', {
+            studentNum: currentUser.num,
+            studentName: currentUser.name,
+            totalCount: problems.length,
+            probIndex: probIdx + 1,
+            voiceStep: matched ? speechMethod || 'sino' : isReading1 ? 'sino' : 'native',
+            transcribed: bestText,
+            isCorrect: matched ? '정답' : '오답',
+            sessionId: sessionId
+          });
+        }
       }
     };
     recog.onerror = e => {
@@ -5931,16 +5933,18 @@ function App() {
       }
       setIsRecording(false);
       if (!reviewMode && !wrong.find(w => w.id === p.id)) setWrong(pr => [...pr, p]);
-      sendGasData('saveVoiceRecord', {
-        studentNum: currentUser?.num,
-        studentName: currentUser?.name,
-        totalCount: problems.length,
-        probIndex: probIdx + 1,
-        voiceStep: 'sino',
-        transcribed: '(건너뜀)',
-        isCorrect: '오답',
-        sessionId
-      });
+      if (!reviewMode && currentUser) {
+        sendGasData('saveVoiceRecord', {
+          studentNum: currentUser?.num,
+          studentName: currentUser?.name,
+          totalCount: problems.length,
+          probIndex: probIdx + 1,
+          voiceStep: 'sino',
+          transcribed: '(건너뜀)',
+          isCorrect: '오답',
+          sessionId
+        });
+      }
       setTranscript('');
       setVoiceResult(null);
       setReading1(null);
@@ -6148,16 +6152,18 @@ function App() {
       }
       setIsRecording(false);
       if (!reviewMode && !wrong.find(w => w.id === p.id)) setWrong(pr => [...pr, p]);
-      sendGasData('saveVoiceRecord', {
-        studentNum: currentUser?.num,
-        studentName: currentUser?.name,
-        totalCount: problems.length,
-        probIndex: probIdx + 1,
-        voiceStep: 'native',
-        transcribed: '(건너뜀)',
-        isCorrect: '오답',
-        sessionId
-      });
+      if (!reviewMode && currentUser) {
+        sendGasData('saveVoiceRecord', {
+          studentNum: currentUser?.num,
+          studentName: currentUser?.name,
+          totalCount: problems.length,
+          probIndex: probIdx + 1,
+          voiceStep: 'native',
+          transcribed: '(건너뜀)',
+          isCorrect: '오답',
+          sessionId
+        });
+      }
       setTranscript('');
       setVoiceResult(null);
       setReading1(null);
@@ -6532,16 +6538,18 @@ function App() {
       if (!reviewMode && !wrong.find(w => w.id === p.id)) {
         setWrong(pr => [...pr, p]);
       }
-      sendGasData('saveVoiceRecord', {
-        studentNum: currentUser?.num,
-        studentName: currentUser?.name,
-        totalCount: problems.length,
-        probIndex: probIdx + 1,
-        voiceStep: voiceStep,
-        transcribed: '(건너뜀)',
-        isCorrect: '오답',
-        sessionId: sessionId
-      });
+      if (!reviewMode && currentUser) {
+        sendGasData('saveVoiceRecord', {
+          studentNum: currentUser?.num,
+          studentName: currentUser?.name,
+          totalCount: problems.length,
+          probIndex: probIdx + 1,
+          voiceStep: voiceStep,
+          transcribed: '(건너뜀)',
+          isCorrect: '오답',
+          sessionId: sessionId
+        });
+      }
       setTranscript('');
       setVoiceResult(null);
       setVoiceStep('sino');
