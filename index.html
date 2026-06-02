@@ -1238,6 +1238,8 @@ function App() {
   const [conceptSet, setConceptSet] = useState(null); // 선택된 개념 세트
   const [conceptIdx, setConceptIdx] = useState(0); // 현재 카드 인덱스
   const [showConceptMenu, setShowConceptMenu] = useState(false); // 개념 세트 선택 메뉴
+  const [conceptRecording, setConceptRecording] = useState(false); // 개념 익히기 녹음 중
+  const [conceptHeard, setConceptHeard] = useState(null); // 개념 익히기 녹음 결과 {text, correct}
   const [challengeLevel, setChallengeLevel] = useState(null); // 선택된 도전 레벨
   const [timeLeft, setTimeLeft] = useState(0); // 남은 시간(초)
   const [timerActive, setTimerActive] = useState(false); // 타이머 작동 여부
@@ -1622,6 +1624,52 @@ function App() {
         });
       }
     }
+  };
+
+  // 개념 익히기 - 듣고 따라 말하기 녹음
+  const startConceptRecording = (targetWord) => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('이 브라우저에서는 음성 인식을 지원하지 않아요.\n크롬 브라우저를 사용해 주세요!');
+      return;
+    }
+    if (recogRef.current) {
+      try {
+        recogRef.current.onresult = null;
+        recogRef.current.onend = null;
+        recogRef.current.onerror = null;
+        recogRef.current.abort();
+      } catch (e) {}
+      recogRef.current = null;
+    }
+    const recog = new SpeechRecognition();
+    recog.lang = 'ko-KR';
+    recog.interimResults = false;
+    recog.maxAlternatives = 5;
+    setConceptRecording(true);
+    setConceptHeard(null);
+    const cleanTarget = targetWord.replace(/[^가-힣]/g, '');
+    recog.onresult = event => {
+      // 모든 후보 중 정답과 일치하는 게 있는지 확인
+      let heardText = event.results[0][0].transcript.replace(/\s/g, '').replace(/[.,!?~]/g, '');
+      let matched = false;
+      for (let i = 0; i < event.results[0].length; i++) {
+        const alt = event.results[0][i].transcript.replace(/[^가-힣]/g, '');
+        if (alt === cleanTarget) { matched = true; heardText = alt; break; }
+      }
+      setConceptHeard({ text: heardText || '(못 들었어요)', correct: matched });
+      setConceptRecording(false);
+      if (matched) {
+        if (window.confetti) window.confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#22c55e', '#fbbf24', '#3b82f6'] });
+        speak('정답이에요! 잘 따라 말했어요!', muted);
+      } else {
+        speak('다시 한번 따라 말해볼까요?', muted);
+      }
+    };
+    recog.onerror = () => { setConceptRecording(false); };
+    recog.onend = () => { setConceptRecording(false); };
+    recogRef.current = recog;
+    try { recog.start(); } catch (e) { setConceptRecording(false); }
   };
 
   // 녹음 시작
@@ -4428,242 +4476,257 @@ function App() {
   }, "\uCC98\uC74C\uC73C\uB85C \uB3CC\uC544\uAC00\uAE30"));
 
   /* ── 개념 익히기 (카드 넘기며 학습) ── */
-  if (step === 'concept' && conceptSet) {
-    const cards = conceptSet.cards;
-    const card = cards[conceptIdx];
-    const goPrev = () => {
-      if (conceptIdx > 0) setConceptIdx(conceptIdx - 1);
-    };
-    const goNext = () => {
-      if (conceptIdx < cards.length - 1) setConceptIdx(conceptIdx + 1);
-    };
-    const isTen = conceptSet.id.includes('ten');
-    return /*#__PURE__*/React.createElement("div", {
-      className: "fade-in",
-      style: {
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: '#F4FAF6'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '16px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        background: 'white',
-        borderBottom: `4px solid ${conceptSet.color}`
-      }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setStep('map');
-        setConceptSet(null);
-        setConceptIdx(0);
-      },
-      style: {
-        padding: '10px 18px',
-        background: '#f1f5f9',
-        border: 'none',
-        borderRadius: 12,
-        cursor: 'pointer',
-        fontSize: 18,
-        fontWeight: 700,
-        color: '#475569'
-      }
-    }, "\u25C0 \uC9C0\uB3C4\uB85C"), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 26,
-        fontWeight: 900,
-        color: conceptSet.color,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8
-      }
-    }, /*#__PURE__*/React.createElement("span", {
-      style: {
-        fontSize: 30
-      }
-    }, conceptSet.icon), " ", conceptSet.title), /*#__PURE__*/React.createElement("div", {
-      style: {
-        marginLeft: 'auto',
-        fontSize: 20,
-        fontWeight: 900,
-        color: '#64748b'
-      }
-    }, conceptIdx + 1, " / ", cards.length), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setMuted(!muted),
-      style: {
-        fontSize: 24,
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer'
-      }
-    }, muted ? '🔇' : '🔊')), /*#__PURE__*/React.createElement("div", {
-      style: {
-        height: 8,
-        background: '#e2e8f0'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        height: '100%',
-        width: `${(conceptIdx + 1) / cards.length * 100}%`,
-        background: conceptSet.color,
-        transition: 'width 0.3s'
-      }
-    })), /*#__PURE__*/React.createElement("div", {
-      style: {
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 24,
-        padding: 24,
-        minHeight: 0
-      }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: goPrev,
-      disabled: conceptIdx === 0,
-      style: {
-        fontSize: 48,
-        width: 80,
-        height: 80,
-        borderRadius: '50%',
-        background: conceptIdx === 0 ? '#f1f5f9' : 'white',
-        border: `4px solid ${conceptIdx === 0 ? '#e2e8f0' : conceptSet.color}`,
-        color: conceptIdx === 0 ? '#cbd5e1' : conceptSet.color,
-        cursor: conceptIdx === 0 ? 'not-allowed' : 'pointer',
-        flexShrink: 0,
-        boxShadow: conceptIdx === 0 ? 'none' : '0 6px 16px rgba(0,0,0,0.1)'
-      }
-    }, "\u25C0"), /*#__PURE__*/React.createElement("div", {
-      key: conceptIdx,
-      className: "pop-in",
-      style: {
-        flex: 1,
-        maxWidth: 700,
-        height: '100%',
-        maxHeight: 560,
-        background: 'white',
-        borderRadius: 48,
-        border: `8px solid ${conceptSet.color}`,
-        boxShadow: '0 20px 50px rgba(0,0,0,0.12)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 20,
-        padding: 32,
-        position: 'relative'
-      }
-    }, /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 120,
-        fontWeight: 900,
-        color: conceptSet.color,
-        lineHeight: 1
-      }
-    }, card.num), /*#__PURE__*/React.createElement("div", {
-      style: {
-        display: 'flex',
-        gap: 10,
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        minHeight: 90
-      }
-    }, isTen ? [...Array(card.blocks)].map((_, i) => /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: {
-        width: 22,
-        height: 80,
-        borderRadius: 6,
-        background: 'linear-gradient(135deg, #c084fc, #a855f7)',
-        border: '2px solid #9333ea',
-        display: 'flex',
-        flexDirection: 'column'
-      }
-    }, [...Array(10)].map((_, j) => /*#__PURE__*/React.createElement("div", {
-      key: j,
-      style: {
-        flex: 1,
-        borderBottom: j < 9 ? '1px solid rgba(255,255,255,0.4)' : 'none'
-      }
-    })))) : [...Array(card.units)].map((_, i) => /*#__PURE__*/React.createElement("div", {
-      key: i,
-      style: {
-        width: 26,
-        height: 26,
-        borderRadius: 6,
-        background: 'linear-gradient(135deg, #fdba74, #f97316)',
-        border: '2px solid #ea580c'
-      }
-    }))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 72,
-        fontWeight: 900,
-        color: '#1e293b',
-        background: `${conceptSet.color}15`,
-        padding: '12px 48px',
-        borderRadius: 28
-      }
-    }, card.word), /*#__PURE__*/React.createElement("button", {
-      onClick: () => speak(card.word, false),
-      style: {
-        padding: '14px 32px',
-        background: conceptSet.bg,
-        color: 'white',
-        borderRadius: 999,
-        fontSize: 24,
-        fontWeight: 900,
-        border: 'none',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        boxShadow: `0 8px 20px ${conceptSet.color}55`
-      }
-    }, "\uD83D\uDD0A \uC18C\uB9AC \uB4E3\uAE30")), /*#__PURE__*/React.createElement("button", {
-      onClick: goNext,
-      disabled: conceptIdx === cards.length - 1,
-      style: {
-        fontSize: 48,
-        width: 80,
-        height: 80,
-        borderRadius: '50%',
-        background: conceptIdx === cards.length - 1 ? '#f1f5f9' : 'white',
-        border: `4px solid ${conceptIdx === cards.length - 1 ? '#e2e8f0' : conceptSet.color}`,
-        color: conceptIdx === cards.length - 1 ? '#cbd5e1' : conceptSet.color,
-        cursor: conceptIdx === cards.length - 1 ? 'not-allowed' : 'pointer',
-        flexShrink: 0,
-        boxShadow: conceptIdx === cards.length - 1 ? 'none' : '0 6px 16px rgba(0,0,0,0.1)'
-      }
-    }, "\u25B6")), conceptIdx === cards.length - 1 && /*#__PURE__*/React.createElement("div", {
-      style: {
-        padding: '0 24px 24px',
-        display: 'flex',
-        justifyContent: 'center'
-      }
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setStep('map');
-        setConceptSet(null);
-        setConceptIdx(0);
-      },
-      className: "main-btn",
-      style: {
-        padding: '16px 48px',
-        background: conceptSet.bg,
-        color: 'white',
-        borderRadius: 999,
-        fontSize: 26,
-        fontWeight: 900,
-        border: 'none',
-        cursor: 'pointer',
-        boxShadow: `0 10px 24px ${conceptSet.color}55`
-      }
-    }, "\uB2E4 \uBC30\uC6E0\uC5B4\uC694! \uD83C\uDF89")));
-  }
+
+    if (step === 'concept' && conceptSet) {
+      const cards = conceptSet.cards;
+      const card = cards[conceptIdx];
+      const goPrev = () => {
+        if (conceptIdx > 0) {
+          setConceptIdx(conceptIdx - 1);
+          setConceptHeard(null);
+          setConceptRecording(false);
+        }
+      };
+      const goNext = () => {
+        if (conceptIdx < cards.length - 1) {
+          setConceptIdx(conceptIdx + 1);
+          setConceptHeard(null);
+          setConceptRecording(false);
+        }
+      };
+      return /*#__PURE__*/React.createElement("div", {
+        className: "fade-in",
+        style: {
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          background: '#F4FAF6'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          padding: '16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+          background: 'white',
+          borderBottom: `4px solid ${conceptSet.color}`
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => {
+          setStep('map');
+          setConceptSet(null);
+          setConceptIdx(0);
+          setConceptHeard(null);
+        },
+        style: {
+          padding: '10px 18px',
+          background: '#f1f5f9',
+          border: 'none',
+          borderRadius: 12,
+          cursor: 'pointer',
+          fontSize: 18,
+          fontWeight: 700,
+          color: '#475569'
+        }
+      }, "\uC9C0\uB3C4\uB85C"), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 26,
+          fontWeight: 900,
+          color: conceptSet.color,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
+        }
+      }, /*#__PURE__*/React.createElement("span", {
+        style: {
+          fontSize: 30
+        }
+      }, conceptSet.icon), " ", conceptSet.title), /*#__PURE__*/React.createElement("div", {
+        style: {
+          marginLeft: 'auto',
+          fontSize: 20,
+          fontWeight: 900,
+          color: '#64748b'
+        }
+      }, conceptIdx + 1, " / ", cards.length), /*#__PURE__*/React.createElement("button", {
+        onClick: () => setMuted(!muted),
+        style: {
+          fontSize: 24,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer'
+        }
+      }, muted ? '\u{1F507}' : '\u{1F50A}')), /*#__PURE__*/React.createElement("div", {
+        style: {
+          height: 8,
+          background: '#e2e8f0'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          height: '100%',
+          width: `${(conceptIdx + 1) / cards.length * 100}%`,
+          background: conceptSet.color,
+          transition: 'width 0.3s'
+        }
+      })), /*#__PURE__*/React.createElement("div", {
+        style: {
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 24,
+          padding: 24,
+          minHeight: 0,
+          overflow: 'auto'
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: goPrev,
+        disabled: conceptIdx === 0,
+        style: {
+          fontSize: 48,
+          width: 80,
+          height: 80,
+          borderRadius: '50%',
+          background: conceptIdx === 0 ? '#f1f5f9' : 'white',
+          border: `4px solid ${conceptIdx === 0 ? '#e2e8f0' : conceptSet.color}`,
+          color: conceptIdx === 0 ? '#cbd5e1' : conceptSet.color,
+          cursor: conceptIdx === 0 ? 'not-allowed' : 'pointer',
+          flexShrink: 0,
+          boxShadow: conceptIdx === 0 ? 'none' : '0 6px 16px rgba(0,0,0,0.1)'
+        }
+      }, '\u25C0'), /*#__PURE__*/React.createElement("div", {
+        key: conceptIdx,
+        className: "pop-in",
+        style: {
+          flex: 1,
+          maxWidth: 760,
+          background: 'white',
+          borderRadius: 48,
+          border: `8px solid ${conceptSet.color}`,
+          boxShadow: '0 20px 50px rgba(0,0,0,0.12)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 18,
+          padding: '32px 32px 28px',
+          position: 'relative'
+        }
+      }, /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 110,
+          fontWeight: 900,
+          color: conceptSet.color,
+          lineHeight: 1
+        }
+      }, card.num), /*#__PURE__*/React.createElement(BlocksDisplay, {
+        value: card.num
+      }), /*#__PURE__*/React.createElement("div", {
+        style: {
+          fontSize: 64,
+          fontWeight: 900,
+          color: '#1e293b',
+          background: `${conceptSet.color}15`,
+          padding: '10px 44px',
+          borderRadius: 28
+        }
+      }, card.word), /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          gap: 14,
+          flexWrap: 'wrap',
+          justifyContent: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => speak(card.word, false),
+        style: {
+          padding: '14px 28px',
+          background: conceptSet.bg,
+          color: 'white',
+          borderRadius: 999,
+          fontSize: 22,
+          fontWeight: 900,
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          boxShadow: `0 8px 20px ${conceptSet.color}55`
+        }
+      }, '\u{1F50A}', " \uB4E3\uAE30"), /*#__PURE__*/React.createElement("button", {
+        onClick: () => startConceptRecording(card.word),
+        disabled: conceptRecording,
+        style: {
+          padding: '14px 28px',
+          background: conceptRecording ? '#ef4444' : '#22c55e',
+          color: 'white',
+          borderRadius: 999,
+          fontSize: 22,
+          fontWeight: 900,
+          border: 'none',
+          cursor: conceptRecording ? 'not-allowed' : 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          boxShadow: conceptRecording ? '0 0 24px rgba(239,68,68,0.4)' : '0 8px 20px rgba(34,197,94,0.4)',
+          animation: conceptRecording ? 'pulseRed 1s ease-in-out infinite' : 'none'
+        }
+      }, conceptRecording ? '\u{1F534} 듣고 있어요...' : '\u{1F399}\uFE0F 따라 말하기')), conceptHeard && /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          padding: '10px 24px',
+          borderRadius: 20,
+          fontSize: 24,
+          fontWeight: 900,
+          background: conceptHeard.correct ? '#dcfce7' : '#fef2f2',
+          color: conceptHeard.correct ? '#166534' : '#dc2626',
+          border: `3px solid ${conceptHeard.correct ? '#86efac' : '#fca5a5'}`
+        }
+      }, conceptHeard.correct ? '\u{1F31F} 정답이에요!' : '\u{1F5E3}\uFE0F "' + conceptHeard.text + '" — 다시 해볼까요?')), /*#__PURE__*/React.createElement("button", {
+        onClick: goNext,
+        disabled: conceptIdx === cards.length - 1,
+        style: {
+          fontSize: 48,
+          width: 80,
+          height: 80,
+          borderRadius: '50%',
+          background: conceptIdx === cards.length - 1 ? '#f1f5f9' : 'white',
+          border: `4px solid ${conceptIdx === cards.length - 1 ? '#e2e8f0' : conceptSet.color}`,
+          color: conceptIdx === cards.length - 1 ? '#cbd5e1' : conceptSet.color,
+          cursor: conceptIdx === cards.length - 1 ? 'not-allowed' : 'pointer',
+          flexShrink: 0,
+          boxShadow: conceptIdx === cards.length - 1 ? 'none' : '0 6px 16px rgba(0,0,0,0.1)'
+        }
+      }, '\u25B6')), conceptIdx === cards.length - 1 && /*#__PURE__*/React.createElement("div", {
+        style: {
+          padding: '0 24px 24px',
+          display: 'flex',
+          justifyContent: 'center'
+        }
+      }, /*#__PURE__*/React.createElement("button", {
+        onClick: () => {
+          setStep('map');
+          setConceptSet(null);
+          setConceptIdx(0);
+          setConceptHeard(null);
+        },
+        className: "main-btn",
+        style: {
+          padding: '16px 48px',
+          background: conceptSet.bg,
+          color: 'white',
+          borderRadius: 999,
+          fontSize: 26,
+          fontWeight: 900,
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: `0 10px 24px ${conceptSet.color}55`
+        }
+      }, "\uB2E4 \uBC30\uC6E0\uC5B4\uC694! ", '\u{1F389}')));
+    }
 
   /* ── MAP ── */
   if (step === 'map') return /*#__PURE__*/React.createElement("div", {
@@ -4823,7 +4886,59 @@ function App() {
     stroke: "#4ade80",
     strokeWidth: "8",
     strokeDasharray: "16 12"
-  })), STAGE_DATA.map(stg => {
+  })), /*#__PURE__*/React.createElement("button", {
+      className: "stage-btn",
+      onClick: () => setShowConceptMenu(true),
+      style: {
+        position: 'absolute',
+        top: '82%',
+        left: '7%',
+        transform: 'translate(-50%,-50%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 8,
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        padding: 0
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: 100,
+        height: 100,
+        borderRadius: 28,
+        background: 'linear-gradient(135deg, #c4b5fd, #8b5cf6)',
+        border: '5px solid #7c3aed',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: 48,
+        boxShadow: '0 8px 20px rgba(139,92,246,0.4)'
+      }
+    }, '\u{1F4DA}'), /*#__PURE__*/React.createElement("div", {
+      style: {
+        background: 'linear-gradient(135deg, #ede9fe, #ddd6fe)',
+        border: '3px solid #8b5cf6',
+        color: '#5b21b6',
+        borderRadius: 999,
+        padding: '8px 22px',
+        fontSize: 24,
+        fontWeight: 900,
+        whiteSpace: 'nowrap',
+        boxShadow: '0 6px 15px rgba(139,92,246,0.2)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        lineHeight: 1.2
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        fontSize: 16,
+        color: '#7c3aed',
+        fontWeight: 700
+      }
+    }, '\u{1F31F}', " \uBA3C\uC800 \uBC30\uC6B0\uAE30"), /*#__PURE__*/React.createElement("div", null, "\uAC1C\uB150 \uC775\uD788\uAE30"))), STAGE_DATA.map(stg => {
     const done = completed.includes(stg.id);
     const isChallenge = stg.id === 5;
     return /*#__PURE__*/React.createElement("button", {
