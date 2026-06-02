@@ -1646,7 +1646,9 @@ function App() {
           studentName: currentUser.name,
           rate: rate,
           correctList: correctItems,
-          wrongList: wrongItems
+          wrongList: wrongItems,
+          firstTry: problems.length - wrong.length,
+          retry: wrong.length
         });
       }
     }
@@ -2067,7 +2069,9 @@ function App() {
             studentName: currentUser.name,
             rate: rate,
             correctList: correctItems,
-            wrongList: wrongItems
+            wrongList: wrongItems,
+            firstTry: problems.length - wrong.length,
+            retry: wrong.length
           });
         }
       }
@@ -2602,7 +2606,9 @@ function App() {
       timeUsed: timeUsed,
       score: score,
       total: totalProblems,
-      rate: rate
+      rate: rate,
+      firstTry: score,
+      retry: totalProblems - score
     });
   };
   const startStage5 = level => {
@@ -4566,7 +4572,7 @@ function App() {
     style: {
       marginTop: 4
     }
-  }, "\uBC84\uC804: v2-roster-fix")));
+  }, "\uBC84\uC804: v3-problem-count")));
 
   /* ── 개념 익히기 (카드 넘기며 학습) ── */
 
@@ -6560,7 +6566,9 @@ function App() {
               studentName: currentUser.name,
               rate: rate,
               correctList: correctItems,
-              wrongList: wrongItems
+              wrongList: wrongItems,
+              firstTry: problems.length - allWrong.length,
+              retry: allWrong.length
             });
           }
         }
@@ -8048,7 +8056,22 @@ function App() {
         fontSize: 18,
         marginBottom: 8
       }
-    }, "\uD83D\uDCD6 ", /*#__PURE__*/React.createElement("b", null, "\uD559\uC2B5 \uB0B4\uC6A9(\uB9DE\uD798):"), " ", STAGE_DATA[phase - 1]?.name, " (", problems.filter(prb => !wrong.find(w => w.id === prb.id)).map(prb => prb.q).join(', '), ")"), /*#__PURE__*/React.createElement("div", {
+    }, "\uD83D\uDCD6 ", /*#__PURE__*/React.createElement("b", null, "\uD559\uC2B5 \uB0B4\uC6A9(\uB9DE\uD798):"), " ", STAGE_DATA[phase - 1]?.name, " (", problems.filter(prb => !wrong.find(w => w.id === prb.id)).map(prb => prb.q).join(', '), ")"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      fontSize: 18,
+      marginBottom: 8
+    }
+  }, '\u{1F4CA}', " ", /*#__PURE__*/React.createElement("b", null, "\uBB38\uC81C \uC218:"), " \uC804\uCCB4 ", problems.length, "\uBB38\uC81C \uC911 ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#16a34a',
+      fontWeight: 900
+    }
+  }, "\uD55C \uBC88\uC5D0 \uD47C \uBB38\uC81C ", problems.length - wrong.length, "\uAC1C"), ", ", /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: '#f97316',
+      fontWeight: 900
+    }
+  }, "\uB2E4\uC2DC \uD47C \uBB38\uC81C ", wrong.length, "\uAC1C")), /*#__PURE__*/React.createElement("div", {
       style: {
         fontSize: 18
       }
