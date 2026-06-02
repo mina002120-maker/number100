@@ -1661,6 +1661,9 @@ function App() {
       alert('이 브라우저에서는 음성 인식을 지원하지 않아요.\n크롬 브라우저를 사용해 주세요!');
       return;
     }
+    // 진행 중인 TTS 중단 (마이크와 충돌 방지)
+    try { window.speechSynthesis.cancel(); } catch (e) {}
+    // 기존 인식 정리
     if (recogRef.current) {
       try {
         recogRef.current.onresult = null;
@@ -1673,11 +1676,12 @@ function App() {
     const recog = new SpeechRecognition();
     recog.lang = 'ko-KR';
     recog.interimResults = true; // 실시간 중간 결과 활성화
+    recog.continuous = false;
     recog.maxAlternatives = 5;
-    setConceptRecording(true);
     setConceptHeard(null);
     setConceptInterim('');
     const cleanTarget = targetWord.replace(/[^가-힣]/g, '');
+    recog.onstart = () => { setConceptRecording(true); };
     recog.onresult = event => {
       let interimText = '';
       let finalText = '';
@@ -1702,6 +1706,7 @@ function App() {
         setConceptInterim('');
         setConceptHeard({ text: heardText || '(못 들었어요)', correct: matched });
         setConceptRecording(false);
+        try { recog.stop(); } catch (e) {}
         if (matched) {
           if (window.confetti) window.confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#22c55e', '#fbbf24', '#3b82f6'] });
           speak('정답이에요! 잘 따라 말했어요!', muted);
@@ -1710,10 +1715,26 @@ function App() {
         }
       }
     };
-    recog.onerror = () => { setConceptRecording(false); setConceptInterim(''); };
+    recog.onerror = e => {
+      setConceptRecording(false);
+      setConceptInterim('');
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        setConceptHeard({ text: '마이크 사용을 허용해 주세요', correct: false });
+      } else if (e.error === 'no-speech') {
+        setConceptHeard({ text: '소리가 안 들려요', correct: false });
+      }
+    };
     recog.onend = () => { setConceptRecording(false); };
     recogRef.current = recog;
-    try { recog.start(); } catch (e) { setConceptRecording(false); }
+    // TTS가 끝날 시간을 약간 준 뒤 인식 시작 (마이크 충돌 방지)
+    setTimeout(() => {
+      try {
+        recog.start();
+      } catch (e) {
+        setConceptRecording(false);
+        setConceptHeard({ text: '다시 눌러주세요', correct: false });
+      }
+    }, 250);
   };
 
   // 녹음 시작
