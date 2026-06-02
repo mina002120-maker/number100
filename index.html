@@ -1268,6 +1268,7 @@ function App() {
   const [tutorialStep, setTutorialStep] = useState(0); // 튜토리얼 내부 진행 단계
   const [seenTutorials, setSeenTutorials] = useState([]); // 이미 본 단계 (한 세션에서 한 번만)
   const recogRef = useRef(null);
+  const conceptRecogRef = useRef(null); // 개념 익히기 전용 음성 인식
 
   // 학생 명단 불러오기
   useEffect(() => {
@@ -1663,25 +1664,24 @@ function App() {
     }
     // 진행 중인 TTS 중단 (마이크와 충돌 방지)
     try { window.speechSynthesis.cancel(); } catch (e) {}
-    // 기존 인식 정리
-    if (recogRef.current) {
+    // 기존 개념 인식 정리
+    if (conceptRecogRef.current) {
       try {
-        recogRef.current.onresult = null;
-        recogRef.current.onend = null;
-        recogRef.current.onerror = null;
-        recogRef.current.abort();
+        conceptRecogRef.current.onresult = null;
+        conceptRecogRef.current.onend = null;
+        conceptRecogRef.current.onerror = null;
+        conceptRecogRef.current.abort();
       } catch (e) {}
-      recogRef.current = null;
+      conceptRecogRef.current = null;
     }
     const recog = new SpeechRecognition();
     recog.lang = 'ko-KR';
-    recog.interimResults = true; // 실시간 중간 결과 활성화
-    recog.continuous = false;
+    recog.interimResults = true;
     recog.maxAlternatives = 5;
+    setConceptRecording(true);
     setConceptHeard(null);
     setConceptInterim('');
     const cleanTarget = targetWord.replace(/[^가-힣]/g, '');
-    recog.onstart = () => { setConceptRecording(true); };
     recog.onresult = event => {
       let interimText = '';
       let finalText = '';
@@ -1690,9 +1690,10 @@ function App() {
         if (event.results[i].isFinal) finalText += t;
         else interimText += t;
       }
-      // 말하는 중 실시간 텍스트 표시
+      // 말하는 중 실시간 텍스트 표시 (한글만 남김)
       if (interimText) {
-        setConceptInterim(interimText.replace(/\s/g, ''));
+        const cleaned = interimText.replace(/\s/g, '').replace(/[.,!?~]/g, '');
+        setConceptInterim(cleaned);
       }
       // 최종 결과 처리
       if (finalText) {
@@ -1706,7 +1707,6 @@ function App() {
         setConceptInterim('');
         setConceptHeard({ text: heardText || '(못 들었어요)', correct: matched });
         setConceptRecording(false);
-        try { recog.stop(); } catch (e) {}
         if (matched) {
           if (window.confetti) window.confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ['#22c55e', '#fbbf24', '#3b82f6'] });
           speak('정답이에요! 잘 따라 말했어요!', muted);
@@ -1725,16 +1725,13 @@ function App() {
       }
     };
     recog.onend = () => { setConceptRecording(false); };
-    recogRef.current = recog;
-    // TTS가 끝날 시간을 약간 준 뒤 인식 시작 (마이크 충돌 방지)
-    setTimeout(() => {
-      try {
-        recog.start();
-      } catch (e) {
-        setConceptRecording(false);
-        setConceptHeard({ text: '다시 눌러주세요', correct: false });
-      }
-    }, 250);
+    conceptRecogRef.current = recog;
+    try {
+      recog.start();
+    } catch (e) {
+      setConceptRecording(false);
+      setConceptHeard({ text: '다시 눌러주세요', correct: false });
+    }
   };
 
   // 녹음 시작
